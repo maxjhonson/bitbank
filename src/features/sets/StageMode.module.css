@@ -1,0 +1,9 @@
+.stage { min-height: 100%; background: #000; color: #fff; padding: 12px 16px 32px; }
+.bar { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0 12px; background: #000; }
+.exit { color: var(--text-2); font-size: 16px; padding: 12px 0; min-height: 44px; }
+.clock { font-size: 32px; font-weight: 700; }
+.toggle { min-width: 96px; min-height: 48px; font: 700 18px var(--font-body); background: var(--accent); color: #000; border: 0; border-radius: var(--radius); cursor: pointer; }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 28px; }
+.title { font: 800 clamp(32px, 9vw, 56px)/1.1 var(--font-display); margin: 0; }
+.segue { font-size: 14px; color: var(--text-muted); margin: 0 0 6px; font-style: italic; }
+.notice { font-size: 24px; margin: 24px 0; }

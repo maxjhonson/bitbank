@@ -22,7 +22,7 @@ export function Layout({ jokeCount, setCount, pinnedTags, footer, banner }: Layo
   const t = useT()
   return (
     <div className={styles.shell}>
-      <aside className={styles.sidebar}>
+      <aside className={`${styles.sidebar} no-print`}>
         <div className={styles.brand}>{t('app.name')}</div>
         <nav aria-label={t('nav.main')} className={styles.nav}>
           {NAV.map(({ to, key, end }) => (
@@ -48,7 +48,7 @@ export function Layout({ jokeCount, setCount, pinnedTags, footer, banner }: Layo
         {footer && <div className={styles.footer}>{footer}</div>}
       </aside>
       <main className={styles.main}>
-        {banner}
+        {banner && <div className="no-print">{banner}</div>}
         <Outlet />
       </main>
     </div>

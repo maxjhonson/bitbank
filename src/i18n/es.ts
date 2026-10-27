@@ -203,4 +203,8 @@ export const es: Record<TKey, string> = {
   'joke.deleteSets': "Estos sets lo perderán:",
   'joke.deleteFailed': "No se pudo eliminar el chiste. Inténtalo de nuevo.",
   'common.cancel': "Cancelar",
+  'stage.start': "Iniciar",
+  'stage.pause': "Pausar",
+  'stage.elapsed': "Tiempo transcurrido",
+  'stage.exit': "Salir",
 }

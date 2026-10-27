@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useT } from '../../i18n'
 import { JokeBank } from './JokeBank'
+import { PrintSetList } from './PrintSetList'
 import { RunningOrder } from './RunningOrder'
 import { SetHeader } from './SetHeader'
 import { SetStats } from './SetStats'
@@ -22,11 +23,14 @@ export function SetBuilderPage() {
     )
   }
   return (
-    <div className={styles.page}>
-      <SetHeader view={view} />
-      <SetStats view={view} />
-      <RunningOrder view={view} />
-      <JokeBank view={view} />
-    </div>
+    <>
+      <div className={`${styles.page} no-print`}>
+        <SetHeader view={view} />
+        <SetStats view={view} />
+        <RunningOrder view={view} />
+        <JokeBank view={view} />
+      </div>
+      <PrintSetList view={view} />
+    </>
   )
 }

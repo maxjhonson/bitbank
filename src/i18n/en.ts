@@ -201,6 +201,10 @@ export const en = {
   'joke.deleteSets': "These sets will lose it:",
   'joke.deleteFailed': "Could not delete the joke. Try again.",
   'common.cancel': "Cancel",
+  'stage.start': "Start",
+  'stage.pause': "Pause",
+  'stage.elapsed': "Elapsed time",
+  'stage.exit': "Exit",
 } as const
 
 export type TKey = keyof typeof en

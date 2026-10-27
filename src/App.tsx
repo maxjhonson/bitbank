@@ -5,14 +5,14 @@ import { LibraryPage } from './features/library/LibraryPage'
 import { JokeEditorPage } from './features/joke/JokeEditorPage'
 import { SetListPage } from './features/sets/SetListPage'
 import { SetBuilderPage } from './features/sets/SetBuilderPage'
-import { StagePage } from './features/stage/StagePage'
+import { StageModePage } from './features/sets/StageModePage'
 import { NotebookPage } from './features/notebook/NotebookPage'
 import { SettingsPage } from './features/settings/SettingsPage'
 
 export function App() {
   return (
     <Routes>
-      <Route path="/sets/:id/stage" element={<StagePage />} />
+      <Route path="/sets/:id/stage" element={<StageModePage />} />
       <Route element={<AppShell />}>
         <Route path="/" element={<LibraryPage />} />
         <Route path="/jokes/:id" element={<JokeEditorPage />} />
