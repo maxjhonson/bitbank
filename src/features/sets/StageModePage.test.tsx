@@ -78,6 +78,18 @@ describe('StageModePage', () => {
   })
 })
 
+describe('StageModePage clock drift', () => {
+  it('uses wall-clock time, not tick count', async () => {
+    const { set } = await seed()
+    renderPage(set.id)
+    await screen.findAllByTestId('stage-title')
+    vi.useFakeTimers({ shouldAdvanceTime: false })
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    act(() => { vi.setSystemTime(Date.now() + 9_000); vi.advanceTimersToNextTimer() })
+    expect(screen.getByTestId('stage-clock')).toHaveTextContent('0:10')
+  })
+})
+
 describe('PrintSetList', () => {
   it('renders numbered titles in running order', () => {
     const row = (n: number, title: string) => ({ itemId: `i${n}`, slot: n, joke: { title } as never, sec: 0, score: null })

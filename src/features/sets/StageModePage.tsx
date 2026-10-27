@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useT } from '../../i18n'
 import { formatMmSs } from '../../domain/time'
@@ -11,11 +11,23 @@ export function StageModePage() {
   const { id } = useParams()
   const view = useSetView(id)
   const [running, setRunning] = useState(false)
-  const [elapsed, setElapsed] = useState(0)
+  const [elapsedMs, setElapsedMs] = useState(0)
+  const accRef = useRef(0)
+  const startedAt = useRef(0)
+  const toggle = () => {
+    if (running) {
+      accRef.current += Date.now() - startedAt.current
+      setElapsedMs(accRef.current)
+      setRunning(false)
+    } else {
+      startedAt.current = Date.now()
+      setRunning(true)
+    }
+  }
   useWakeLock(true)
   useEffect(() => {
     if (!running) return
-    const h = setInterval(() => setElapsed(e => e + 1), 1000)
+    const h = setInterval(() => setElapsedMs(accRef.current + (Date.now() - startedAt.current)), 1000)
     return () => clearInterval(h)
   }, [running])
 
@@ -32,8 +44,8 @@ export function StageModePage() {
     <div className={styles.stage}>
       <header className={styles.bar}>
         <Link to={`/sets/${view.set.id}`} className={styles.exit}>{t('stage.exit')}</Link>
-        <span className={`${styles.clock} mono`} data-testid="stage-clock" aria-label={t('stage.elapsed')}>{formatMmSs(elapsed)}</span>
-        <button type="button" className={styles.toggle} onClick={() => setRunning(r => !r)}>
+        <span className={`${styles.clock} mono`} data-testid="stage-clock" aria-label={t('stage.elapsed')}>{formatMmSs(Math.floor(elapsedMs / 1000))}</span>
+        <button type="button" className={styles.toggle} onClick={toggle}>
           {running ? t('stage.pause') : t('stage.start')}
         </button>
       </header>
@@ -42,7 +54,7 @@ export function StageModePage() {
       ) : (
         <ol className={styles.list}>
           {view.rows.map(r => (
-            <li key={r.itemId} className={styles.item}>
+            <li key={r.itemId}>
               {r.segue && <p className={styles.segue}>{r.segue}</p>}
               <p className={styles.title} data-testid="stage-title">{r.joke.title}</p>
             </li>

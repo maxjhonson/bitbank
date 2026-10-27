@@ -27,3 +27,8 @@
   .counts, .pinned, .footer { display: none; }
   .main { padding: 16px; }
 }
+
+@media print {
+  .shell { display: block; }
+  .main { padding: 0; }
+}

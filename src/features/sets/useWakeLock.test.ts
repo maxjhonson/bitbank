@@ -36,4 +36,14 @@ describe('useWakeLock', () => {
     await new Promise(r => setTimeout(r, 0))
     expect(result.current.held).toBe(false)
   })
+
+  it('does not issue a second request while the first is in flight', async () => {
+    let resolve!: (v: unknown) => void
+    const request = vi.fn().mockReturnValue(new Promise(r => { resolve = r }))
+    nav.wakeLock = { request }
+    renderHook(() => useWakeLock(true))
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(request).toHaveBeenCalledTimes(1)
+    resolve({ release: vi.fn().mockResolvedValue(undefined) })
+  })
 })

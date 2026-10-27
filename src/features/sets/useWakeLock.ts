@@ -15,14 +15,17 @@ export function useWakeLock(active: boolean): { supported: boolean; held: boolea
     if (!active || !wl) return
     let sentinel: Sentinel | null = null
     let cancelled = false
+    let inFlight = false
     const acquire = async () => {
+      if (inFlight) return
+      inFlight = true
       try {
         const s = await wl.request('screen')
         if (cancelled) { void s.release().catch(() => {}); return }
         sentinel = s
         s.addEventListener?.('release', () => { if (sentinel === s) { sentinel = null; setHeld(false) } })
         setHeld(true)
-      } catch { setHeld(false) }
+      } catch { setHeld(false) } finally { inFlight = false }
     }
     const onVisible = () => { if (document.visibilityState === 'visible' && !sentinel) void acquire() }
     document.addEventListener('visibilitychange', onVisible)
