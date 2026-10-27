@@ -8,7 +8,17 @@ import { requestPersistence } from './backup'
 import './styles/tokens.css'
 import './styles/global.css'
 
-void requestPersistence().catch(() => {})
+function shouldRequestPersistence(): boolean {
+  try {
+    if (localStorage.getItem('bitbank.persistRequested')) return false
+    localStorage.setItem('bitbank.persistRequested', '1')
+  } catch {
+    /* storage unavailable: just ask */
+  }
+  return true
+}
+
+if (shouldRequestPersistence()) void requestPersistence().catch(() => {})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { addPerformance } from '../../db'
+import { addPerformance, updateJoke } from '../../db'
 import { formatMmSs, todayLocalISO } from '../../domain/time'
 import { REHEARSAL_VENUE } from '../../domain/types'
 import { useT } from '../../i18n'
@@ -12,7 +12,8 @@ export function RehearsalTimer({ jokeId }: { jokeId: string }) {
   const sw = useStopwatch()
   const [pending, setPending] = useState<number | null>(null)
 
-  const finish = async (save: boolean) => {
+  const finish = async (save: boolean, manual = false) => {
+    if (manual && pending !== null) await updateJoke(jokeId, { manualTimeSec: pending })
     if (save && pending !== null) {
       await addPerformance({ jokeId, date: todayLocalISO(), venue: REHEARSAL_VENUE, durationSec: pending, score: 0 })
     }
@@ -36,6 +37,7 @@ export function RehearsalTimer({ jokeId }: { jokeId: string }) {
           <p>{t('timer.stopped', { time: formatMmSs(pending) })}</p>
           <div className={styles.row}>
             <Button onClick={() => void finish(true)}>{t('timer.save')}</Button>
+            <Button onClick={() => void finish(false, true)}>{t('timer.useManual')}</Button>
             <Button variant="ghost" onClick={() => void finish(false)}>{t('timer.discard')}</Button>
           </div>
         </div>

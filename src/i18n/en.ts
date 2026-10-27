@@ -220,6 +220,18 @@ export const en = {
   'stage.pause': "Pause",
   'stage.elapsed': "Elapsed time",
   'stage.exit': "Exit",
+  'perf.dateError': "Enter a valid date (YYYY-MM-DD).",
+  'perf.venueError': "Enter a venue.",
+  'backup.exportFailed': "Export failed. Nothing was downloaded.",
+  'editor.notSaved': "Not saved",
+  'editor.timeOverride': "Time override (m:ss)",
+  'editor.timeOverrideError': "Enter a time like 1:15 (m:ss).",
+  'editor.manualScore': "Manual score (1-5)",
+  'editor.clearOverride': "Clear",
+  'editor.setOverride': "Set",
+  'timer.useManual': "Use as manual time",
+  'lib.tagFilter': "Tag",
+  'lib.allTags': "All tags",
 } as const
 
 export type TKey = keyof typeof en

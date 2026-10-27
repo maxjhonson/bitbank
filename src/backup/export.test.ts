@@ -22,6 +22,13 @@ describe('export', () => {
     expect((await db.settings.get('settings'))?.lastExportAt).toBe(now.toISOString())
   })
 
+  it('exportJson throws when its own output would not validate', async () => {
+    await seed()
+    const p = (await db.performances.toArray())[0]
+    await db.performances.update(p.id, { date: '' })
+    await expect(exportJson()).rejects.toThrow(/validation/)
+  })
+
   it('buildBackup does not write', async () => {
     await buildBackup()
     expect(await db.settings.count()).toBe(0)

@@ -14,6 +14,7 @@ export function maybeSnapshot(
 ): Joke['versions'] {
   const changed = prev.setup !== next.setup || prev.punchline !== next.punchline
   if (!changed) return prev.versions
+  if (prev.setup.trim() === '' && prev.punchline.trim() === '') return prev.versions
   const last = prev.versions[prev.versions.length - 1]
   if (last) {
     const age = now.getTime() - new Date(last.savedAt).getTime()
@@ -21,4 +22,15 @@ export function maybeSnapshot(
   }
   const entry = { savedAt: now.toISOString(), setup: prev.setup, punchline: prev.punchline }
   return [...prev.versions, entry].slice(-MAX_VERSIONS)
+}
+
+/** Unconditionally appends a snapshot of the given text (bypasses the 1-hour rule); skipped when both parts are empty. */
+export function forceSnapshot(
+  versions: Joke['versions'],
+  current: { setup: string; punchline: string },
+  now: Date,
+): Joke['versions'] {
+  if (current.setup.trim() === '' && current.punchline.trim() === '') return versions
+  const entry = { savedAt: now.toISOString(), setup: current.setup, punchline: current.punchline }
+  return [...versions, entry].slice(-MAX_VERSIONS)
 }

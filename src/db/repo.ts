@@ -97,6 +97,18 @@ export async function updateSet(id: string, patch: Partial<ComedySet>): Promise<
   await db.sets.update(id, { ...patch, updatedAt: now() })
 }
 
+/** Atomic read-modify-write of a set's items inside one rw transaction. */
+export async function updateSetItems(
+  setId: string,
+  fn: (items: ComedySet['items']) => ComedySet['items'],
+): Promise<void> {
+  await db.transaction('rw', db.sets, async () => {
+    const set = await db.sets.get(setId)
+    if (!set) return
+    await db.sets.update(setId, { items: fn(set.items), updatedAt: now() })
+  })
+}
+
 /** Appends the joke to the end of the set; no-op if it is already there. */
 export async function addJokeToSet(setId: string, jokeId: string): Promise<void> {
   await db.transaction('rw', db.sets, async () => {
@@ -152,6 +164,8 @@ export async function promoteIdea(id: string): Promise<Joke> {
 }
 
 export async function updateSettings(patch: Partial<Settings>): Promise<void> {
-  const current = await getSettings()
-  await db.settings.put({ ...current, ...patch, id: 'settings' })
+  await db.transaction('rw', db.settings, async () => {
+    const current = await getSettings()
+    await db.settings.put({ ...current, ...patch, id: 'settings' })
+  })
 }

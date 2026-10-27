@@ -43,6 +43,15 @@ describe('StageModePage', () => {
     expect(container.querySelector('input, textarea')).toBeNull()
   })
 
+  it('renders the segue after its joke title and falls back for untitled jokes', async () => {
+    const a = await createJoke({ title: '' })
+    const set = await createSet({ name: 'S', items: [{ id: 'i1', jokeId: a.id, segue: 'bridge' }] })
+    renderPage(set.id)
+    const title = await screen.findByTestId('stage-title')
+    expect(title).toHaveTextContent('Untitled')
+    expect(title.nextElementSibling).toHaveTextContent('bridge')
+  })
+
   it('unknown set shows not-found', async () => {
     renderPage('nope')
     expect(await screen.findByText('Set not found')).toBeInTheDocument()
@@ -94,7 +103,7 @@ describe('PrintSetList', () => {
   it('renders numbered titles in running order', () => {
     const row = (n: number, title: string) => ({ itemId: `i${n}`, slot: n, joke: { title } as never, sec: 0, score: null })
     const view = { set: { name: 'Show' }, rows: [row(1, 'Alpha'), row(2, 'Bravo')] } as unknown as SetView
-    render(<PrintSetList view={view} />)
+    render(<I18nProvider><PrintSetList view={view} /></I18nProvider>)
     const items = screen.getAllByRole('listitem')
     expect(items.map(i => i.textContent)).toEqual(['Alpha', 'Bravo'])
     expect(screen.getByRole('list').tagName).toBe('OL')

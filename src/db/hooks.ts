@@ -33,6 +33,11 @@ export function useSet(id: string | undefined): ComedySet | undefined {
   return useLiveQuery(() => (id ? db.sets.get(id) : undefined), [id])
 }
 
+/** Like useSet but distinguishes loading (undefined) from missing (null). */
+export function useSetLookup(id: string | undefined): ComedySet | null | undefined {
+  return useLiveQuery(async () => (id ? ((await db.sets.get(id)) ?? null) : null), [id])
+}
+
 export function useIdeas(): Idea[] | undefined {
   return useLiveQuery(() => db.ideas.toArray(), [])
 }

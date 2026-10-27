@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db, useJokeStats } from '../../db'
+import { useJokeStats, useSetLookup } from '../../db'
 import { setTotals, weakSpots } from '../../domain/derive'
 import type { ComedySet, Joke } from '../../domain/types'
 
@@ -24,7 +23,7 @@ export interface SetView {
 
 /** undefined = loading, null = set not found. Items whose joke is gone are skipped. */
 export function useSetView(id: string | undefined): SetView | undefined | null {
-  const set = useLiveQuery(async () => (id ? ((await db.sets.get(id)) ?? null) : null), [id])
+  const set = useSetLookup(id)
   const stats = useJokeStats()
   return useMemo(() => {
     if (set === undefined || !stats) return undefined

@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createJoke, db, getJoke } from '../../db'
 import { I18nProvider } from '../../i18n'
 import { JokeEditorPage } from './JokeEditorPage'
@@ -118,6 +118,57 @@ describe('JokeEditorPage', () => {
     expect(screen.getByLabelText('Setup')).toHaveValue('old s')
     expect(screen.getByLabelText('Punchline')).toHaveValue('old p')
     await waitFor(async () => expect((await getJoke(j.id))?.setup).toBe('old s'))
+  })
+
+  it('restoring snapshots the current text first', async () => {
+    const j = await createJoke({
+      setup: 'current s', punchline: 'current p',
+      versions: [{ savedAt: new Date().toISOString(), setup: 'old s', punchline: 'old p' }],
+    })
+    renderPage(j.id)
+    await userEvent.click(await screen.findByRole('button', { name: /Restore/ }))
+    await waitFor(async () => {
+      const cur = (await getJoke(j.id))!
+      expect(cur.versions).toHaveLength(2)
+      expect(cur.versions[1]).toMatchObject({ setup: 'current s', punchline: 'current p' })
+      expect(cur.setup).toBe('old s')
+    })
+  })
+
+  it('manual time override: invalid, set, clear', async () => {
+    const j = await createJoke()
+    renderPage(j.id)
+    const input = await screen.findByLabelText('Time override (m:ss)')
+    await userEvent.type(input, 'abc')
+    await userEvent.click(screen.getByRole('button', { name: 'Set' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/m:ss/)
+    expect((await getJoke(j.id))!.manualTimeSec).toBeUndefined()
+    await userEvent.clear(input)
+    await userEvent.type(input, '1:30')
+    await userEvent.click(screen.getByRole('button', { name: 'Set' }))
+    await waitFor(async () => expect((await getJoke(j.id))!.manualTimeSec).toBe(90))
+    expect(await screen.findByText('Manual')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Time override (m:ss): Clear' }))
+    await waitFor(async () => expect(await db.jokes.get(j.id)).not.toHaveProperty('manualTimeSec'))
+  })
+
+  it('manual score is stored x2 and clearable', async () => {
+    const j = await createJoke()
+    renderPage(j.id)
+    await userEvent.selectOptions(await screen.findByLabelText('Manual score (1-5)'), '4')
+    await waitFor(async () => expect((await getJoke(j.id))!.manualScore).toBe(8))
+    await userEvent.click(screen.getByRole('button', { name: 'Manual score (1-5): Clear' }))
+    await waitFor(async () => expect(await db.jokes.get(j.id)).not.toHaveProperty('manualScore'))
+  })
+
+  it('shows a Not saved alert when a save fails', async () => {
+    const j = await createJoke()
+    renderPage(j.id)
+    const input = await screen.findByLabelText('Title')
+    const spy = vi.spyOn(db.jokes, 'update').mockRejectedValue(new Error('boom'))
+    await userEvent.type(input, 'x')
+    expect(await screen.findByRole('alert', {}, { timeout: 3000 })).toHaveTextContent('Not saved')
+    spy.mockRestore()
   })
 
   it('shows time with source label and score placeholder', async () => {

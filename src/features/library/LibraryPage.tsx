@@ -41,6 +41,7 @@ export function LibraryPage() {
     [all, filters, debounced, tag],
   )
 
+  const allTags = useMemo(() => [...new Set([...all.flatMap(s => s.joke.tags), ...(tag ? [tag] : [])])].sort(), [all, tag])
   const totalSec = all.reduce((a, s) => a + s.sec, 0)
   const testedSec = all.reduce((a, s) => a + (s.stageTested ? s.sec : 0), 0)
   const statusCounts: Record<JokeStatus, number> = { draft: 0, working: 0, tight: 0, retired: 0 }
@@ -87,6 +88,8 @@ export function LibraryPage() {
             onChange={patch => setFilters(f => ({ ...f, ...patch }))}
             statusCounts={statusCounts}
             onClearTag={() => setParams({})}
+            tags={allTags}
+            onTag={tg => setParams(tg ? { tag: tg } : {})}
           />
           {visible.length === 0 ? (
             <p className={styles.empty}>{t('lib.noMatch')}</p>

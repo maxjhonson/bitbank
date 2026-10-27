@@ -79,3 +79,16 @@ describe('SidebarBackupFooter', () => {
     expect(await db.settings.count()).toBe(1)
   })
 })
+
+describe('export failure', () => {
+  it('shows an error toast and downloads nothing when the export throws', async () => {
+    await createJoke({ title: 'A' })
+    const p = await db.jokes.toCollection().first()
+    // an invalid performance makes exportJson fail its own validation
+    await db.performances.add({ id: 'bad', jokeId: p!.id, date: '', venue: 'x', score: 1, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' })
+    wrap(<SidebarBackupFooter />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Export backup' }))
+    expect(await screen.findByText('Export failed. Nothing was downloaded.')).toBeInTheDocument()
+    expect(downloads.downloadText).not.toHaveBeenCalled()
+  })
+})

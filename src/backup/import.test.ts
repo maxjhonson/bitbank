@@ -206,3 +206,14 @@ describe('atomicity and references', () => {
     expect((await db.sets.toArray())[0].items).toHaveLength(1)
   })
 })
+
+describe('tag normalization on import', () => {
+  it('normalizes file tags', async () => {
+    await seed()
+    const f = clone(await fileOf())
+    f.data.jokes[0].tags = ['#Family', ' family ', 'Travel']
+    await wipe()
+    await applyImport(f, 'replace')
+    expect((await db.jokes.get(f.data.jokes[0].id))!.tags).toEqual(['family', 'travel'])
+  })
+})

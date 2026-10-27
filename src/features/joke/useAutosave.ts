@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export interface Autosave {
-  status: 'idle' | 'saving' | 'saved'
+  status: 'idle' | 'saving' | 'saved' | 'error'
   savedAt?: Date
   flush(): Promise<void>
 }
 
 /**
  * Debounced autosave. The initial value is treated as already saved.
- * Pending changes are flushed on unmount and on `pagehide`.
+ * Pending changes are flushed on unmount, `pagehide` and when the page becomes hidden.
  */
 export function useAutosave<T>(value: T, save: (v: T) => Promise<void>, delayMs = 800): Autosave {
   const [status, setStatus] = useState<Autosave['status']>('idle')
@@ -43,7 +43,7 @@ export function useAutosave<T>(value: T, save: (v: T) => Promise<void>, delayMs 
         () => {
           // allow a retry on the next change
           if (saved.current === v) saved.current = undefined as unknown as T
-          if (mounted.current) setStatus('idle')
+          if (mounted.current) setStatus('error')
         },
       )
     return chain.current
@@ -60,9 +60,14 @@ export function useAutosave<T>(value: T, save: (v: T) => Promise<void>, delayMs 
   useEffect(() => {
     mounted.current = true
     const onHide = () => void flush()
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') void flush()
+    }
     window.addEventListener('pagehide', onHide)
+    document.addEventListener('visibilitychange', onVisibility)
     return () => {
       window.removeEventListener('pagehide', onHide)
+      document.removeEventListener('visibilitychange', onVisibility)
       void flush()
       mounted.current = false
     }

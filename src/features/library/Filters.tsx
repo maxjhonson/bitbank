@@ -14,9 +14,11 @@ interface Props {
   onChange: (patch: Partial<LibraryQuery>) => void
   statusCounts: Record<JokeStatus, number>
   onClearTag: () => void
+  tags: string[]
+  onTag: (tag: string | undefined) => void
 }
 
-export function Filters({ query, searchText, onSearch, onChange, statusCounts, onClearTag }: Props) {
+export function Filters({ query, searchText, onSearch, onChange, statusCounts, onClearTag, tags, onTag }: Props) {
   const t = useT()
   const toggleStatus = (s: JokeStatus) => {
     const next = new Set(query.statuses)
@@ -43,6 +45,13 @@ export function Filters({ query, searchText, onSearch, onChange, statusCounts, o
                 {t(`lib.sort.${s}` as TKey)}
               </option>
             ))}
+          </select>
+        </label>
+        <label className={styles.sort}>
+          {t('lib.tagFilter')}
+          <select value={query.tag ?? ''} onChange={e => onTag(e.target.value || undefined)}>
+            <option value="">{t('lib.allTags')}</option>
+            {tags.map(tg => <option key={tg} value={tg}>#{tg}</option>)}
           </select>
         </label>
       </div>

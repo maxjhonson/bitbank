@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { downloadText, exportMarkdown } from '../../backup'
 import { updateSettings, useSettings } from '../../db'
 import { useLang, useT } from '../../i18n'
@@ -21,7 +21,11 @@ function NumberSetting({
   onCommit: (n: number) => void
 }) {
   const [text, setText] = useState(String(value))
-  useEffect(() => setText(String(value)), [value])
+  const focused = useRef(false)
+  // Don't clobber in-progress typing with a (stale) live value.
+  useEffect(() => {
+    if (!focused.current) setText(String(value))
+  }, [value])
   return (
     <label className={styles.field}>
       {label}
@@ -30,6 +34,8 @@ function NumberSetting({
         inputMode="numeric"
         min={min}
         value={text}
+        onFocus={() => { focused.current = true }}
+        onBlur={() => { focused.current = false; setText(String(value)) }}
         onChange={(e) => {
           setText(e.target.value)
           const n = Number(e.target.value)

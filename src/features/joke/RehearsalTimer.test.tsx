@@ -39,4 +39,12 @@ describe('RehearsalTimer', () => {
     await user.click(await screen.findByRole('button', { name: 'Discard' }))
     expect(await db.performances.count()).toBe(0)
   })
+
+  it('use as manual time sets manualTimeSec and saves no performance', async () => {
+    const j = await createJoke()
+    const user = await runTimer(j.id)
+    await user.click(await screen.findByRole('button', { name: 'Use as manual time' }))
+    await waitFor(async () => expect((await getJoke(j.id))!.manualTimeSec).toBeGreaterThanOrEqual(75))
+    expect(await db.performances.count()).toBe(0)
+  })
 })

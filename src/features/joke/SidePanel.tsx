@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react'
 import { useT } from '../../i18n'
-import { formatMmSs } from '../../domain/time'
+import { ratingToScore, scoreToRating } from '../../domain/rating'
+import { formatMmSs, parseMmSs } from '../../domain/time'
 import type { TimeSource } from '../../domain/derive'
 import type { JokeStatus } from '../../domain/types'
+import { Button } from '../../ui/Button/Button'
 import { StatusBadge } from '../../ui/StatusBadge/StatusBadge'
 import { AddToSetMenu } from './AddToSetMenu'
 import { UsedIn } from './UsedIn'
@@ -21,12 +24,30 @@ interface Props {
   status: JokeStatus
   tags: string[]
   tagSuggestions: string[]
+  manualTimeSec?: number
+  manualScore?: number
+  onManualTime(sec: number | undefined): void
+  onManualScore(score: number | undefined): void
   onStatus(s: JokeStatus): void
   onTags(tags: string[]): void
 }
 
-export function SidePanel({ sec, source, score, trend, jokeId, status, tags, tagSuggestions, onStatus, onTags }: Props) {
+export function SidePanel({ sec, source, score, trend, jokeId, status, tags, tagSuggestions, manualTimeSec, manualScore, onManualTime, onManualScore, onStatus, onTags }: Props) {
   const t = useT()
+  const [timeText, setTimeText] = useState(manualTimeSec === undefined ? '' : formatMmSs(manualTimeSec))
+  const [timeError, setTimeError] = useState(false)
+  useEffect(() => {
+    setTimeText(manualTimeSec === undefined ? '' : formatMmSs(manualTimeSec))
+    setTimeError(false)
+  }, [manualTimeSec])
+  const saveTime = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (timeText.trim() === '') { setTimeError(false); onManualTime(undefined); return }
+    const v = parseMmSs(timeText)
+    if (v === null) { setTimeError(true); return }
+    setTimeError(false)
+    onManualTime(v)
+  }
   return (
     <aside className={styles.panel}>
       <dl className={styles.stats}>
@@ -44,6 +65,30 @@ export function SidePanel({ sec, source, score, trend, jokeId, status, tags, tag
           </dd>
         </div>
       </dl>
+      <form className={styles.field} onSubmit={saveTime}>
+        <label htmlFor="joke-time-override">{t('editor.timeOverride')}</label>
+        <div className={styles.statusRow}>
+          <input id="joke-time-override" className={styles.select} value={timeText} placeholder="1:15" onChange={e => setTimeText(e.target.value)} />
+          <Button type="submit">{t('editor.setOverride')}</Button>
+          <Button variant="ghost" onClick={() => { setTimeText(''); setTimeError(false); onManualTime(undefined) }} aria-label={`${t('editor.timeOverride')}: ${t('editor.clearOverride')}`}>{t('editor.clearOverride')}</Button>
+        </div>
+        {timeError && <p role="alert">{t('editor.timeOverrideError')}</p>}
+      </form>
+      <div className={styles.field}>
+        <label htmlFor="joke-manual-score">{t('editor.manualScore')}</label>
+        <div className={styles.statusRow}>
+          <select
+            id="joke-manual-score"
+            className={styles.select}
+            value={manualScore === undefined ? '' : String(scoreToRating(manualScore))}
+            onChange={e => onManualScore(e.target.value === '' ? undefined : ratingToScore(Number(e.target.value)))}
+          >
+            <option value="">–</option>
+            {[1, 2, 3, 4, 5].map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <Button variant="ghost" onClick={() => onManualScore(undefined)} aria-label={`${t('editor.manualScore')}: ${t('editor.clearOverride')}`}>{t('editor.clearOverride')}</Button>
+        </div>
+      </div>
       <div className={styles.field}>
         <label htmlFor="joke-status">{t('editor.status')}</label>
         <div className={styles.statusRow}>

@@ -5,7 +5,7 @@ import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalList
 import { CSS } from '@dnd-kit/utilities'
 import { Link } from 'react-router-dom'
 import { useT } from '../../i18n'
-import { updateSet } from '../../db'
+import { updateSetItems } from '../../db'
 import { formatMmSs } from '../../domain/time'
 import { Tag } from '../../ui/Tag/Tag'
 import { CommitField } from './CommitField'
@@ -19,7 +19,7 @@ function Row({ row, index, view }: { row: SetRow; index: number; view: SetView }
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: row.itemId })
   const title = row.joke.title || t('lib.untitled')
   const patchItem = (patch: Partial<SetView['set']['items'][number]>) =>
-    void updateSet(set.id, { items: set.items.map(i => (i.id === row.itemId ? { ...i, ...patch } : i)) })
+    void updateSetItems(set.id, items => items.map(i => (i.id === row.itemId ? { ...i, ...patch } : i)))
   return (
     <li
       ref={setNodeRef}
@@ -53,7 +53,7 @@ function Row({ row, index, view }: { row: SetRow; index: number; view: SetView }
           <option value="opener">{t('set.role.opener')}</option>
           <option value="closer">{t('set.role.closer')}</option>
         </select>
-        <button type="button" className={`${styles.remove} no-print`} aria-label={t('set.remove', { title })} onClick={() => void updateSet(set.id, { items: set.items.filter(i => i.id !== row.itemId) })}>
+        <button type="button" className={`${styles.remove} no-print`} aria-label={t('set.remove', { title })} onClick={() => void updateSetItems(set.id, items => items.filter(i => i.id !== row.itemId))}>
           ×
         </button>
       </div>
@@ -78,10 +78,11 @@ export function RunningOrder({ view }: { view: SetView }) {
   )
   function onDragEnd({ active, over }: DragEndEvent) {
     if (!over || active.id === over.id) return
-    const from = set.items.findIndex(i => i.id === active.id)
-    const to = set.items.findIndex(i => i.id === over.id)
-    if (from < 0 || to < 0) return
-    void updateSet(set.id, { items: moveItem(set.items, from, to) })
+    void updateSetItems(set.id, items => {
+      const from = items.findIndex(i => i.id === active.id)
+      const to = items.findIndex(i => i.id === over.id)
+      return from < 0 || to < 0 ? items : moveItem(items, from, to)
+    })
   }
   return (
     <section aria-label={t('set.runningOrder')}>

@@ -55,8 +55,8 @@ export function StageModePage() {
         <ol className={styles.list}>
           {view.rows.map(r => (
             <li key={r.itemId}>
+              <p className={styles.title} data-testid="stage-title">{r.joke.title || t('lib.untitled')}</p>
               {r.segue && <p className={styles.segue}>{r.segue}</p>}
-              <p className={styles.title} data-testid="stage-title">{r.joke.title}</p>
             </li>
           ))}
         </ol>

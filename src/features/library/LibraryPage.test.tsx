@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -109,5 +110,18 @@ describe('LibraryPage', () => {
     expect(jokes).toHaveLength(1)
     expect(jokes[0].status).toBe('draft')
     expect(screen.getByTestId('where').textContent).toBe(`/jokes/${jokes[0].id}`)
+  })
+
+  it('tag select filters the list and works with the URL param', async () => {
+    await createJoke({ title: 'Fam', tags: ['family'] })
+    await createJoke({ title: 'Trav', tags: ['travel'] })
+    renderPage()
+    const select = await screen.findByLabelText('Tag')
+    await waitFor(() => expect(screen.getByText('Fam')).toBeInTheDocument())
+    await userEvent.selectOptions(select, 'travel')
+    await waitFor(() => expect(screen.queryByText('Fam')).not.toBeInTheDocument())
+    expect(screen.getByText('Trav')).toBeInTheDocument()
+    await userEvent.selectOptions(select, '')
+    expect(await screen.findByText('Fam')).toBeInTheDocument()
   })
 })

@@ -8,8 +8,12 @@ export function useExportBackup(): () => Promise<void> {
   const t = useT()
   const toast = useToast()
   return useCallback(async () => {
-    const { filename, json, counts } = await exportJson()
-    downloadText(filename, json, 'application/json')
-    toast(t('backup.exported', { jokes: counts.jokes, sets: counts.sets }))
+    try {
+      const { filename, json, counts } = await exportJson()
+      downloadText(filename, json, 'application/json')
+      toast(t('backup.exported', { jokes: counts.jokes, sets: counts.sets }))
+    } catch {
+      toast(t('backup.exportFailed'))
+    }
   }, [t, toast])
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Joke } from '../../domain/types'
-import { maybeSnapshot } from './versions'
+import { forceSnapshot, maybeSnapshot } from './versions'
 
 const NOW = new Date('2026-03-01T12:00:00Z')
 const mk = (over: Partial<Joke> = {}): Joke => ({
@@ -33,5 +33,16 @@ describe('maybeSnapshot', () => {
     expect(v).toHaveLength(20)
     expect(v[0].setup).toBe('s1')
     expect(v[19].setup).toBe('old setup')
+  })
+})
+
+describe('blank and forced snapshots', () => {
+  it('no snapshot when previous setup and punchline are both empty', () => {
+    expect(maybeSnapshot(mk({ setup: '', punchline: '' }), { setup: 'new', punchline: '' }, NOW)).toEqual([])
+  })
+  it('forceSnapshot ignores the 1-hour rule and skips empty text', () => {
+    const recent = [{ savedAt: ago(1), setup: 'a', punchline: 'b' }]
+    expect(forceSnapshot(recent, { setup: 'x', punchline: 'y' }, NOW)).toHaveLength(2)
+    expect(forceSnapshot(recent, { setup: ' ', punchline: '' }, NOW)).toBe(recent)
   })
 })

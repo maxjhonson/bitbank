@@ -7,6 +7,13 @@ import { useT } from '../../i18n'
 import { Button } from '../../ui/Button/Button'
 import styles from './PerformanceLog.module.css'
 
+function isValidIsoDate(v: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v)
+  if (!m) return false
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+  return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3])
+}
+
 interface FormState { date: string; venue: string; duration: string; rating: number }
 
 function PerfForm({ initial, submitLabel, onSubmit, onCancel }: {
@@ -21,6 +28,8 @@ function PerfForm({ initial, submitLabel, onSubmit, onCancel }: {
   const rehearsal = f.venue.trim() === REHEARSAL_VENUE
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isValidIsoDate(f.date)) { setError(t('perf.dateError')); return }
+    if (f.venue.trim() === '') { setError(t('perf.venueError')); return }
     let durationSec: number | undefined
     if (f.duration.trim() !== '') {
       const d = parseMmSs(f.duration)

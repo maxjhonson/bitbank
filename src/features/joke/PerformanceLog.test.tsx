@@ -108,3 +108,36 @@ describe('SidePanel derived values', () => {
     expect(screen.getByText('8.0')).toBeInTheDocument()
   })
 })
+
+describe('PerformanceLog validation', () => {
+  it('blocks an empty/invalid date on add with an alert and saves nothing', async () => {
+    const j = await createJoke()
+    renderLog(j.id)
+    const date = await screen.findByLabelText('Date')
+    await userEvent.clear(date)
+    await type(screen.getByLabelText('Venue'), 'Club')
+    await userEvent.click(screen.getByRole('button', { name: 'Add performance' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/valid date/)
+    expect(await db.performances.count()).toBe(0)
+  })
+
+  it('blocks an empty venue on add', async () => {
+    const j = await createJoke()
+    renderLog(j.id)
+    await userEvent.click(await screen.findByRole('button', { name: 'Add performance' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/venue/i)
+    expect(await db.performances.count()).toBe(0)
+  })
+
+  it('blocks clearing the date on edit', async () => {
+    const j = await createJoke()
+    await addPerformance({ jokeId: j.id, date: '2026-10-01', venue: 'Club', score: 6 })
+    renderLog(j.id)
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+    const dates = screen.getAllByLabelText('Date')
+    await userEvent.clear(dates[dates.length - 1])
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect((await screen.findAllByRole('alert'))[0]).toHaveTextContent(/valid date/)
+    expect((await db.performances.toArray())[0].date).toBe('2026-10-01')
+  })
+})

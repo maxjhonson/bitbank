@@ -2,7 +2,7 @@ import { db, getSettings, updateSettings } from '../db'
 import { jokeScore, jokeTime } from '../domain/derive'
 import { formatMmSs } from '../domain/time'
 import type { Performance, Settings } from '../domain/types'
-import { SUPPORTED_SCHEMA_VERSION, type BackupCounts, type BackupFile } from './schema.zod'
+import { SUPPORTED_SCHEMA_VERSION, backupFileSchema, type BackupCounts, type BackupFile } from './schema.zod'
 
 export function backupFilename(now: Date): string {
   const p = (n: number) => String(n).padStart(2, '0')
@@ -45,6 +45,11 @@ export async function exportJson(
   // The file records its own export time so a restored backup does not look un-backed-up.
   file.data.settings = { ...file.data.settings, lastExportAt: file.exportedAt }
   const json = JSON.stringify(file, null, 2)
+  const check = backupFileSchema.safeParse(JSON.parse(json))
+  if (!check.success) {
+    const issue = check.error.issues[0]
+    throw new Error(`Backup failed validation (${issue.path.join('.')}: ${issue.message}). Nothing was exported.`)
+  }
   await updateSettings({ lastExportAt: file.exportedAt })
   return { filename: backupFilename(now), json, counts: file.counts as BackupCounts }
 }

@@ -11,7 +11,7 @@ import { SidePanel } from './SidePanel'
 import { TagLinesEditor } from './TagLinesEditor'
 import { VersionHistory } from './VersionHistory'
 import { useAutosave } from './useAutosave'
-import { maybeSnapshot } from './versions'
+import { forceSnapshot, maybeSnapshot } from './versions'
 import styles from './JokeEditorPage.module.css'
 
 interface Draft {
@@ -44,7 +44,7 @@ export function JokeEditorPage() {
   return <Editor key={joke.id} joke={joke} />
 }
 
-function SavedIndicator({ status, savedAt }: { status: 'idle' | 'saving' | 'saved'; savedAt?: Date }) {
+function SavedIndicator({ status, savedAt }: { status: 'idle' | 'saving' | 'saved' | 'error'; savedAt?: Date }) {
   const t = useT()
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -54,7 +54,12 @@ function SavedIndicator({ status, savedAt }: { status: 'idle' | 'saving' | 'save
   let text = ''
   if (status === 'saving') text = t('editor.saving')
   else if (savedAt) text = t('editor.saved', { when: relativeTime(t, savedAt, Math.max(now, savedAt.getTime())) })
-  return <p role="status" className={styles.saved}>{text}</p>
+  return (
+    <>
+      <p role="status" className={styles.saved}>{status === 'error' ? '' : text}</p>
+      {status === 'error' && <p role="alert" className={styles.saved}>{t('editor.notSaved')}</p>}
+    </>
+  )
 }
 
 function Editor({ joke }: { joke: Joke }) {
@@ -80,6 +85,17 @@ function Editor({ joke }: { joke: Joke }) {
     if (!prev) return
     await updateJoke(joke.id, { ...d, versions: maybeSnapshot(prev, d, new Date()) })
   })
+
+  const restoreVersion = async (v: Joke['versions'][number]) => {
+    // Keep the current text recoverable before overwriting it.
+    await autosave.flush()
+    const prev = await getJoke(joke.id)
+    if (prev) {
+      const versions = forceSnapshot(prev.versions, { setup: draft.setup, punchline: draft.punchline }, new Date())
+      if (versions !== prev.versions) await updateJoke(joke.id, { versions })
+    }
+    setDraft(d => ({ ...d, setup: v.setup, punchline: v.punchline }))
+  }
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft(d => ({ ...d, [k]: v }))
   const { sec, source } = jokeTime(joke, perfs ?? [], settings.wordsPerMinute)
@@ -119,7 +135,7 @@ function Editor({ joke }: { joke: Joke }) {
         </label>
         <VersionHistory
           versions={joke.versions}
-          onRestore={v => setDraft(d => ({ ...d, setup: v.setup, punchline: v.punchline }))}
+          onRestore={v => void restoreVersion(v)}
         />
         <div>
           <Button variant="danger" onClick={() => setDeleting(true)}>{t('joke.delete')}</Button>
@@ -140,6 +156,10 @@ function Editor({ joke }: { joke: Joke }) {
         trend={scoreTrend(perfs ?? [])}
         jokeId={joke.id}
         status={joke.status}
+        manualTimeSec={joke.manualTimeSec}
+        manualScore={joke.manualScore}
+        onManualTime={sec => void updateJoke(joke.id, { manualTimeSec: sec })}
+        onManualScore={score => void updateJoke(joke.id, { manualScore: score })}
         tags={joke.tags}
         tagSuggestions={suggestions}
         onStatus={status => void updateJoke(joke.id, { status })}

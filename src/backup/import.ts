@@ -1,4 +1,4 @@
-import { db } from '../db'
+import { db, normalizeTags } from '../db'
 import type { ComedySet, Idea, Joke, Performance } from '../domain/types'
 import { migrateBackup } from './migrations'
 import { backupFileSchema, SUPPORTED_SCHEMA_VERSION, type BackupFile } from './schema.zod'
@@ -105,7 +105,8 @@ export async function previewImport(file: BackupFile): Promise<ImportPreview> {
 }
 
 export async function applyImport(file: BackupFile, mode: 'merge' | 'replace'): Promise<ImportResult> {
-  const { data } = dedupeFile(file)
+  const deduped = dedupeFile(file).data
+  const data = { ...deduped, jokes: deduped.jokes.map((j) => ({ ...j, tags: normalizeTags(j.tags) })) }
   const result: ImportResult = { added: 0, updated: 0, skipped: 0, removedDangling: 0 }
 
   await db.transaction('rw', [db.jokes, db.performances, db.sets, db.ideas, db.settings], async () => {
