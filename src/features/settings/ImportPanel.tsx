@@ -46,13 +46,18 @@ export function ImportPanel() {
   const load = async (f: File | undefined) => {
     reset()
     if (!f) return
-    const parsed = parseBackup(await readText(f))
-    if (!parsed.ok) {
-      setErrors(parsed.errors)
-      return
+    try {
+      const parsed = parseBackup(await readText(f))
+      if (!parsed.ok) {
+        setErrors(parsed.errors)
+        return
+      }
+      const pv = await previewImport(parsed.file)
+      setFile(parsed.file)
+      setPreview(pv)
+    } catch {
+      setErrors([t('import.readError')])
     }
-    setFile(parsed.file)
-    setPreview(await previewImport(parsed.file))
   }
 
   const onDrop = (e: DragEvent) => {
@@ -73,6 +78,8 @@ export function ImportPanel() {
       toast(t('import.done', { added: r.added, updated: r.updated, skipped: r.skipped, removed: r.removedDangling }))
       reset()
       if (inputRef.current) inputRef.current.value = ''
+    } catch {
+      toast(t('import.failed'))
     } finally {
       setBusy(false)
     }

@@ -59,7 +59,37 @@ describe('SettingsPage storage status', () => {
     setStorage(false)
     renderPage()
     expect(await screen.findByText('Not protected')).toBeInTheDocument()
-    expect(screen.getByText(/may delete this data/)).toBeInTheDocument()
+    expect(screen.getByText(/Home Screen.*clearing site data/)).toBeInTheDocument()
+  })
+})
+
+describe('SettingsPage protect button', () => {
+  function stubPersist(grant: boolean) {
+    let persisted = false
+    vi.stubGlobal('navigator', {
+      language: 'en',
+      storage: {
+        persisted: async () => persisted,
+        persist: async () => {
+          persisted = grant
+          return grant
+        },
+        estimate: async () => ({ usage: 1, quota: 2 }),
+      },
+    })
+  }
+  it('granted: switches to protected', async () => {
+    stubPersist(true)
+    renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Protect my data' }))
+    expect(await screen.findByText('Protected from automatic cleanup')).toBeInTheDocument()
+  })
+  it('denied: stays not protected', async () => {
+    stubPersist(false)
+    renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Protect my data' }))
+    await waitFor(() => expect(screen.getByText('Not protected')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Protect my data' })).toBeInTheDocument()
   })
 })
 
@@ -87,6 +117,7 @@ describe('SettingsPage export', () => {
     expect(filename).toMatch(/\.md$/)
     expect(text).toContain('Zed')
     expect(mime).toBe('text/markdown')
+    expect(await screen.findByText('Markdown exported')).toBeInTheDocument()
   })
 })
 
@@ -138,6 +169,40 @@ describe('SettingsPage import', () => {
     await screen.findByText(/Import done/)
     const titles = (await db.jokes.toArray()).map((j) => j.title)
     expect(titles).toEqual(['FromFile'])
+  })
+
+  it('shows an error when the file cannot be read and writes nothing', async () => {
+    class BadReader {
+      onerror: (() => void) | null = null
+      error = new Error('boom')
+      readAsText() {
+        setTimeout(() => this.onerror?.(), 0)
+      }
+    }
+    vi.stubGlobal('FileReader', BadReader)
+    renderPage()
+    await userEvent.upload(screen.getByLabelText('Choose backup file'), fileOf('{}'))
+    expect(await screen.findByText('Could not read this file.')).toBeInTheDocument()
+    expect(await db.jokes.count()).toBe(0)
+  })
+
+  it('replace: if the automatic export fails, nothing is replaced and an error toast shows', async () => {
+    await createJoke({ title: 'FromFile' })
+    const text = await validBackupText()
+    await wipe()
+    await createJoke({ title: 'Current' })
+    downloads.downloadText.mockImplementationOnce(() => {
+      throw new Error('blocked')
+    })
+    renderPage()
+    await userEvent.upload(screen.getByLabelText('Choose backup file'), fileOf(text))
+    await screen.findByText(/1 new/)
+    await userEvent.click(screen.getByLabelText('Replace all'))
+    await userEvent.type(screen.getByLabelText('Type REPLACE to confirm'), 'REPLACE')
+    await userEvent.click(screen.getByRole('button', { name: 'Import' }))
+    expect(await screen.findByText('Import failed. Nothing was changed.')).toBeInTheDocument()
+    expect((await db.jokes.toArray()).map((j) => j.title)).toEqual(['Current'])
+    expect(screen.getByRole('button', { name: 'Import' })).toBeEnabled()
   })
 
   it('accepts a dropped file like the picker', async () => {

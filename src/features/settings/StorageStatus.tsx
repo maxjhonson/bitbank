@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { getStorageStatus, type StorageStatus as Status } from '../../backup'
+import { getStorageStatus, requestPersistence, type StorageStatus as Status } from '../../backup'
 import { useT } from '../../i18n'
+import { Button } from '../../ui/Button/Button'
 import styles from './Settings.module.css'
 
 function fmt(bytes: number): string {
@@ -32,6 +33,15 @@ export function StorageStatus() {
         <>
           <p>{t('settings.notProtected')}</p>
           <p className={styles.help}>{t('settings.notProtectedHelp')}</p>
+          <div>
+            <Button
+              onClick={() => {
+                void requestPersistence().then(() => getStorageStatus()).then(setStatus)
+              }}
+            >
+              {t('settings.protect')}
+            </Button>
+          </div>
         </>
       )}
       {status.usageBytes !== undefined && status.quotaBytes !== undefined && (

@@ -3,6 +3,7 @@ import { downloadText, exportMarkdown } from '../../backup'
 import { updateSettings, useSettings } from '../../db'
 import { useLang, useT } from '../../i18n'
 import { Button } from '../../ui/Button/Button'
+import { useToast } from '../../ui/Toast/Toast'
 import { useExportBackup } from '../backup/useExportBackup'
 import { ImportPanel } from './ImportPanel'
 import styles from './Settings.module.css'
@@ -44,9 +45,15 @@ export function SettingsPage() {
   const { lang, setLang } = useLang()
   const settings = useSettings()
   const exportBackup = useExportBackup()
+  const toast = useToast()
 
   const exportMd = async () => {
-    downloadText('bitbank-export.md', await exportMarkdown(), 'text/markdown')
+    try {
+      downloadText('bitbank-export.md', await exportMarkdown(), 'text/markdown')
+      toast(t('settings.mdExported'))
+    } catch {
+      toast(t('settings.mdFailed'))
+    }
   }
 
   return (
