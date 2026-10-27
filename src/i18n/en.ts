@@ -1,0 +1,27 @@
+export const en = {
+  'app.name': 'Bit Bank',
+  'nav.library': 'Library',
+  'nav.sets': 'Sets',
+  'nav.notebook': 'Notebook',
+  'nav.settings': 'Settings',
+  'nav.main': 'Main navigation',
+  'layout.pinnedTags': 'Pinned tags',
+  'count.jokes': '{n} jokes',
+  'count.sets': '{n} sets',
+  'common.close': 'Close',
+  'page.library': 'Library',
+  'page.joke': 'Joke',
+  'page.sets': 'Sets',
+  'page.set': 'Set',
+  'page.stage': 'Stage mode',
+  'page.notebook': 'Notebook',
+  'page.settings': 'Settings',
+  'page.notFound': 'Page not found',
+  'status.draft': 'Draft',
+  'status.working': 'Working',
+  'status.tight': 'Tight',
+  'status.retired': 'Retired',
+  'settings.language': 'Language',
+} as const
+
+export type TKey = keyof typeof en

@@ -1,0 +1,6 @@
+.chip {
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
+  background: var(--surface-2); color: var(--text-2);
+  border: 1px solid var(--border); font: 500 14px var(--font-body); cursor: pointer;
+}
+.selected { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }

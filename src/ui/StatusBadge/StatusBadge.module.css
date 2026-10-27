@@ -1,0 +1,5 @@
+.badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.draft { background: var(--status-draft-bg); color: var(--status-draft-fg); }
+.working { background: var(--status-working-bg); color: var(--status-working-fg); }
+.tight { background: var(--status-tight-bg); color: var(--status-tight-fg); }
+.retired { background: var(--status-retired-bg); color: var(--status-retired-fg); }

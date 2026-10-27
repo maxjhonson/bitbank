@@ -1,0 +1,27 @@
+import type { TKey } from './en'
+
+export const es: Record<TKey, string> = {
+  'app.name': 'Bit Bank',
+  'nav.library': 'Biblioteca',
+  'nav.sets': 'Sets',
+  'nav.notebook': 'Libreta',
+  'nav.settings': 'Ajustes',
+  'nav.main': 'Navegación principal',
+  'layout.pinnedTags': 'Etiquetas fijadas',
+  'count.jokes': '{n} chistes',
+  'count.sets': '{n} sets',
+  'common.close': 'Cerrar',
+  'page.library': 'Biblioteca',
+  'page.joke': 'Chiste',
+  'page.sets': 'Sets',
+  'page.set': 'Set',
+  'page.stage': 'Modo escenario',
+  'page.notebook': 'Libreta',
+  'page.settings': 'Ajustes',
+  'page.notFound': 'Página no encontrada',
+  'status.draft': 'Borrador',
+  'status.working': 'En desarrollo',
+  'status.tight': 'Pulido',
+  'status.retired': 'Retirado',
+  'settings.language': 'Idioma',
+}

@@ -1,0 +1,20 @@
+:root {
+  --bg: #16151A;          /* page */
+  --surface: #1E1D23;     /* cards, sidebar */
+  --surface-2: #2C2A33;   /* chips, active nav, dividers */
+  --border: #3A3842;
+  --text: #F3F1EC;
+  --text-2: #C9C7CF;
+  --text-muted: #A8A6B0;
+  --accent: #F2B33D;      /* primary buttons, scores, progress */
+  --accent-soft: #3A2F17; /* punchline block, selected chip */
+  --accent-text: #FFD27A;
+  --status-tight-bg: #1F3A2C;   --status-tight-fg: #8FE0B0;
+  --status-working-bg: #3A2F17; --status-working-fg: #FFD27A;
+  --status-draft-bg: #2C2A33;   --status-draft-fg: #C9C7CF;
+  --status-retired-bg: #3A1F22; --status-retired-fg: #F2A3A8;
+  --radius-sm: 8px; --radius: 12px; --radius-lg: 14px;
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace; /* times and scores */
+}
