@@ -19,7 +19,12 @@ export function SetListPage() {
         <h1 className={styles.h1}>{t('page.sets')}</h1>
         <Button onClick={() => void createSet()}>{t('set.new')}</Button>
       </div>
-      {sets && sets.length === 0 && <p className={styles.empty}>{t('set.empty')}</p>}
+      {sets && sets.length === 0 && (
+        <div className={styles.empty}>
+          <p>{t('set.empty')}</p>
+          <Button onClick={() => void createSet()}>{t('set.emptyCta')}</Button>
+        </div>
+      )}
       <ul className={styles.list}>
         {sorted.map(s => {
           const byJoke = new Map<string, { sec: number; score: number | null }>()

@@ -24,7 +24,8 @@
     border-right: 0; border-bottom: 1px solid var(--border); padding: 8px 12px; gap: 8px;
   }
   .nav { flex-direction: row; flex-wrap: wrap; }
-  .counts, .pinned, .footer { display: none; }
+  .counts, .pinned { display: none; }
+  .footer { margin-top: 0; width: 100%; padding: 0 4px; order: 2 }
   .main { padding: 16px; }
 }
 

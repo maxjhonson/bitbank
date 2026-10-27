@@ -74,7 +74,10 @@ export function LibraryPage() {
         <Button onClick={onNew}>{t('lib.new')}</Button>
       </header>
       {stats && all.length === 0 ? (
-        <p className={styles.empty}>{t('lib.empty')}</p>
+        <div className={styles.empty}>
+          <p>{t('lib.empty')}</p>
+          <Button onClick={onNew}>{t('lib.emptyCta')}</Button>
+        </div>
       ) : (
         <>
           <Filters

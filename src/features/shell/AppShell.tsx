@@ -21,8 +21,8 @@ export function AppShell() {
     <Layout
       banner={<BackupBanner />}
       footer={<SidebarBackupFooter />}
-      jokeCount={jokes ? t('count.jokes', { n: jokes.length }) : undefined}
-      setCount={sets ? t('count.sets', { n: sets.length }) : undefined}
+      jokeCount={jokes ? t(jokes.length === 1 ? 'count.jokes.one' : 'count.jokes', { n: jokes.length }) : undefined}
+      setCount={sets ? t(sets.length === 1 ? 'count.sets.one' : 'count.sets', { n: sets.length }) : undefined}
       pinnedTags={
         pinned.length > 0
           ? pinned.map(tag => (

@@ -57,9 +57,25 @@ describe('LibraryPage', () => {
     expect(await screen.findByRole('button', { name: 'Tight 2' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Draft 0' })).toBeInTheDocument()
     expect(await screen.findByText('2 jokes')).toBeInTheDocument()
-    expect(await screen.findByText('1 sets')).toBeInTheDocument()
+    expect(await screen.findByText('1 set')).toBeInTheDocument()
     const link = await screen.findByRole('link', { name: '#work' })
     expect(link).toHaveAttribute('href', '/?tag=work')
+  })
+
+  it('singular forms for 1 run and 1 set', async () => {
+    const a = await createJoke({ title: 'A' })
+    await addPerformance({ jokeId: a.id, date: '2026-01-01', venue: 'Club', score: 8 })
+    await createSet({ name: 'S', items: [{ id: 'i1', jokeId: a.id }] })
+    renderPage()
+    expect(await screen.findByText('1 run')).toBeInTheDocument()
+    expect(screen.getByText('In 1 set')).toBeInTheDocument()
+    expect(screen.getByText('1 joke')).toBeInTheDocument()
+  })
+
+  it('empty state has a call to action that creates a joke', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Write your first joke' }))
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toMatch(/^\/jokes\/.+/))
   })
 
   it('?tag= filters the list', async () => {

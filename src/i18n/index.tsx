@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useEffect, useContext, useMemo, useState, type ReactNode } from 'react'
 import { en, type TKey } from './en'
 import { es } from './es'
 
@@ -32,8 +32,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
-    document.documentElement.lang = l
   }, [])
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
   const value = useMemo(() => ({ lang, setLang }), [lang, setLang])
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>
 }

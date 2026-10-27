@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../../i18n'
 import { addIdea, deleteIdea, promoteIdea, useIdeas } from '../../db'
@@ -11,6 +11,7 @@ export function IdeaInbox() {
   const ideas = useIdeas()
   const toast = useToast()
   const [text, setText] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
   const sorted = [...(ideas ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -28,6 +29,7 @@ export function IdeaInbox() {
     <div className={styles.page}>
       <h1 className={styles.h1}>{t('page.notebook')}</h1>
       <input
+        ref={inputRef}
         className={styles.input}
         aria-label={t('notebook.captureLabel')}
         placeholder={t('notebook.placeholder')}
@@ -35,7 +37,12 @@ export function IdeaInbox() {
         onChange={(e) => setText(e.target.value)}
         onKeyDown={onKeyDown}
       />
-      {ideas && ideas.length === 0 && <p className={styles.empty}>{t('notebook.empty')}</p>}
+      {ideas && ideas.length === 0 && (
+        <div className={styles.empty}>
+          <p>{t('notebook.empty')}</p>
+          <Button onClick={() => inputRef.current?.focus()}>{t('notebook.emptyCta')}</Button>
+        </div>
+      )}
       <ul className={styles.list}>
         {sorted.map((i) => (
           <li key={i.id} className={styles.row}>

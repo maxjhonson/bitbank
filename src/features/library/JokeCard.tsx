@@ -41,8 +41,8 @@ export function JokeCard({ item }: { item: LibraryItem }) {
         {item.trend != null && item.trend !== 0 && (
           <span aria-label={t('editor.scoreTrend')}>{item.trend > 0 ? '▲' : '▼'}</span>
         )}
-        <span>{t('lib.runs', { n: item.runs })}</span>
-        <span>{t('lib.inSets', { n: item.usedIn })}</span>
+        <span>{t(item.runs === 1 ? 'lib.runs.one' : 'lib.runs', { n: item.runs })}</span>
+        <span>{t(item.usedIn === 1 ? 'lib.inSets.one' : 'lib.inSets', { n: item.usedIn })}</span>
         <button type="button" className={styles.delete} aria-label={t('joke.deleteNamed', { title: joke.title || t('lib.untitled') })} onClick={() => setDeleting(true)}>
           {t('joke.delete')}
         </button>

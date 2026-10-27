@@ -22,6 +22,12 @@ describe('NotebookPage', () => {
     expect(await screen.findByText(/No ideas yet/)).toBeInTheDocument()
   })
 
+  it('empty state has a call to action that focuses the capture field', async () => {
+    renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Start capturing' }))
+    expect(screen.getByLabelText('Quick capture')).toHaveFocus()
+  })
+
   it('Enter saves trimmed idea and clears input', async () => {
     renderPage()
     const input = await screen.findByLabelText('Quick capture')

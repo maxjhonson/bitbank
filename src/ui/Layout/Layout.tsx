@@ -36,12 +36,14 @@ export function Layout({ jokeCount, setCount, pinnedTags, footer, banner }: Layo
             </NavLink>
           ))}
         </nav>
-        <div className={`${styles.counts} mono`}>
-          {jokeCount && <div data-slot="joke-count">{jokeCount}</div>}
-          {setCount && <div data-slot="set-count">{setCount}</div>}
-        </div>
+        {(jokeCount || setCount) && (
+          <div className={`${styles.counts} mono`} data-slot="counts">
+            {jokeCount && <div data-slot="joke-count">{jokeCount}</div>}
+            {setCount && <div data-slot="set-count">{setCount}</div>}
+          </div>
+        )}
         {pinnedTags && (
-          <div className={styles.pinned} aria-label={t('layout.pinnedTags')}>
+          <div className={styles.pinned} role="group" aria-label={t('layout.pinnedTags')}>
             {pinnedTags}
           </div>
         )}

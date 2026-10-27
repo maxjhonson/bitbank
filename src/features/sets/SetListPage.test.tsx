@@ -24,6 +24,12 @@ describe('SetListPage', () => {
     expect(await screen.findByText(/No sets yet/)).toBeInTheDocument()
   })
 
+  it('empty state has a call to action that creates a set', async () => {
+    renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Create your first set' }))
+    await waitFor(async () => expect(await db.sets.count()).toBe(1))
+  })
+
   it('creates a set', async () => {
     renderPage()
     await userEvent.click(await screen.findByRole('button', { name: 'New set' }))
