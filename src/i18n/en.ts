@@ -199,6 +199,7 @@ export const en = {
   'joke.deleteTitle': "Delete this joke?",
   'joke.deleteBody': "This also deletes all of its performances. This cannot be undone.",
   'joke.deleteSets': "These sets will lose it:",
+  'joke.deleteFailed': "Could not delete the joke. Try again.",
   'common.cancel': "Cancel",
 } as const
 

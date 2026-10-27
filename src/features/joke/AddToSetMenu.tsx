@@ -10,7 +10,9 @@ export function AddToSetMenu({ jokeId }: { jokeId: string }) {
   const [open, setOpen] = useState(false)
   const [msg, setMsg] = useState('')
   async function add(id: string, name: string) {
+    const already = sets?.find(s => s.id === id)?.items.some(i => i.jokeId === jokeId)
     await addJokeToSet(id, jokeId)
+    if (already) return
     setMsg(t('addToSet.added', { name }))
   }
   async function addNew() {

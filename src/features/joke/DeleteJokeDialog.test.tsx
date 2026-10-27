@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -49,5 +50,51 @@ describe('DeleteJokeDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Delete joke' }))
     await waitFor(() => expect(onDeleted).toHaveBeenCalled())
     expect(await db.jokes.get(j.id)).toBeUndefined()
+  })
+})
+
+describe('DeleteJokeDialog focus and errors', () => {
+  it('focuses Cancel, traps Tab, restores focus on close', async () => {
+    const j = await createJoke({ title: 'Bit' })
+    function Host() {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>open</button>
+          {open && <DeleteJokeDialog jokeId={j.id} title="Bit" onClose={() => setOpen(false)} onDeleted={() => {}} />}
+        </>
+      )
+    }
+    wrap(<Host />)
+    const trigger = screen.getByRole('button', { name: 'open' })
+    await userEvent.click(trigger)
+    const cancel = await screen.findByRole('button', { name: 'Cancel' })
+    expect(cancel).toHaveFocus()
+    const del = await screen.findByRole('button', { name: 'Delete joke' })
+    await waitFor(() => expect(del).toBeEnabled())
+    await userEvent.tab()
+    expect(del).toHaveFocus()
+    await userEvent.tab()
+    expect(cancel).toHaveFocus()
+    await userEvent.tab({ shift: true })
+    expect(del).toHaveFocus()
+    await userEvent.click(cancel)
+    await waitFor(() => expect(trigger).toHaveFocus())
+  })
+
+  it('shows an alert and stays usable when deleteJoke rejects', async () => {
+    const j = await createJoke({ title: 'Bit' })
+    const spy = vi.spyOn(db, 'transaction').mockRejectedValueOnce(new Error('boom'))
+    const onDeleted = vi.fn()
+    wrap(<DeleteJokeDialog jokeId={j.id} title="Bit" onClose={() => {}} onDeleted={onDeleted} />)
+    const del = await screen.findByRole('button', { name: 'Delete joke' })
+    await waitFor(() => expect(del).toBeEnabled())
+    await userEvent.click(del)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not delete the joke')
+    expect(onDeleted).not.toHaveBeenCalled()
+    await waitFor(() => expect(del).toBeEnabled())
+    spy.mockRestore()
+    await userEvent.click(del)
+    await waitFor(() => expect(onDeleted).toHaveBeenCalled())
   })
 })

@@ -201,5 +201,6 @@ export const es: Record<TKey, string> = {
   'joke.deleteTitle': "¿Eliminar este chiste?",
   'joke.deleteBody': "También elimina todas sus actuaciones. No se puede deshacer.",
   'joke.deleteSets': "Estos sets lo perderán:",
+  'joke.deleteFailed': "No se pudo eliminar el chiste. Inténtalo de nuevo.",
   'common.cancel': "Cancelar",
 }

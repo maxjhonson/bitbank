@@ -128,3 +128,34 @@ describe('JokeEditorPage', () => {
     expect(screen.getByTestId('score-trend')).toBeInTheDocument()
   })
 })
+
+describe('JokeEditorPage delete', () => {
+  it('deleting within the autosave debounce leaves the joke deleted without errors', async () => {
+    const j = await createJoke({ title: 'Doomed' })
+    const errs: unknown[] = []
+    const onRej = (e: PromiseRejectionEvent) => errs.push(e)
+    window.addEventListener('unhandledrejection', onRej)
+    render(
+      <I18nProvider>
+        <MemoryRouter initialEntries={[`/jokes/${j.id}`]}>
+          <Routes>
+            <Route path="/jokes/:id" element={<JokeEditorPage />} />
+            <Route path="/" element={<p>library</p>} />
+          </Routes>
+        </MemoryRouter>
+      </I18nProvider>,
+    )
+    await userEvent.type(await screen.findByLabelText('Title'), ' edit')
+    await userEvent.click(screen.getByRole('button', { name: 'Delete joke' }))
+    const dlg = await screen.findByRole('dialog')
+    const confirm = within(dlg).getByRole('button', { name: 'Delete joke' })
+    await waitFor(() => expect(confirm).toBeEnabled())
+    await userEvent.click(confirm)
+    expect(await screen.findByText('library')).toBeInTheDocument()
+    await new Promise(r => setTimeout(r, 1000))
+    expect(await getJoke(j.id)).toBeUndefined()
+    expect(await db.jokes.count()).toBe(0)
+    expect(errs).toEqual([])
+    window.removeEventListener('unhandledrejection', onRej)
+  })
+})
