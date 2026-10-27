@@ -1,6 +1,5 @@
-import { useT } from '../../i18n'
+import { IdeaInbox } from './IdeaInbox'
 
 export function NotebookPage() {
-  const t = useT()
-  return <h1>{t('page.notebook')}</h1>
+  return <IdeaInbox />
 }

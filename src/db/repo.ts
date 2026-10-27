@@ -141,6 +141,10 @@ export async function promoteIdea(id: string): Promise<Joke> {
   return db.transaction('rw', db.ideas, db.jokes, async () => {
     const idea = await db.ideas.get(id)
     if (!idea) throw new Error(`Idea not found: ${id}`)
+    if (idea.promotedJokeId) {
+      const existing = await db.jokes.get(idea.promotedJokeId)
+      if (existing) return existing
+    }
     const joke = await createJoke({ premise: idea.text })
     await db.ideas.update(id, { promotedJokeId: joke.id, updatedAt: now() })
     return joke

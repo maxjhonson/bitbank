@@ -84,6 +84,16 @@ describe('ideas', () => {
   })
 })
 
+describe('ideas idempotent', () => {
+  it('promoteIdea twice returns the same joke without duplicating', async () => {
+    const idea = await repo.addIdea('once')
+    const a = await repo.promoteIdea(idea.id)
+    const b = await repo.promoteIdea(idea.id)
+    expect(b.id).toBe(a.id)
+    expect(await db.jokes.count()).toBe(1)
+  })
+})
+
 describe('performances', () => {
   it('add, update, delete', async () => {
     const p = await repo.addPerformance({ jokeId: 'j', date: '2026-01-01', venue: 'V', score: 4 })
