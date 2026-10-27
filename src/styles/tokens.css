@@ -18,3 +18,9 @@
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace; /* times and scores */
 }
+
+/* Extra tokens (not part of the spec block) */
+:root {
+  --warning: var(--status-retired-fg);
+  --warning-soft: var(--status-retired-bg);
+}

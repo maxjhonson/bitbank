@@ -109,6 +109,9 @@ describe('Weak spot', () => {
   it('exactly 1.5 below average is flagged', () => {
     expect(weakSpots(s(3), sc(10, 7.75, 10))).toEqual(['i1'])
   })
+  it('decimal scores exactly 1.5 below average are flagged (float epsilon)', () => {
+    expect(weakSpots(s(3), sc(6, 3.9, 6.3))).toEqual(['i1'])
+  })
   it('1.4 below average is not flagged', () => {
     expect(weakSpots(s(3), sc(10, 7.85, 10))).toEqual([])
   })

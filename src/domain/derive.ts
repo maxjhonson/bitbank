@@ -79,7 +79,7 @@ export function weakSpots(set: ComedySet, scores: Map<string, number | null>): s
   const out: string[] = []
   for (let i = 1; i <= n - 2; i++) {
     const s = scores.get(set.items[i].jokeId)
-    if (s !== null && s !== undefined && s <= threshold) out.push(set.items[i].id)
+    if (s !== null && s !== undefined && s <= threshold + 1e-9) out.push(set.items[i].id)
   }
   return out
 }
