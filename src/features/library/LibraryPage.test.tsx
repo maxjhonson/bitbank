@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { addPerformance, createJoke, createSet, db } from '../../db'
 import { I18nProvider } from '../../i18n'
+import { ToastProvider } from '../../ui/Toast/Toast'
 import { AppShell } from '../shell/AppShell'
 import { LibraryPage } from './LibraryPage'
 
@@ -11,7 +12,7 @@ function Where() {
 }
 function renderPage(url = '/') {
   return render(
-    <I18nProvider>
+    <I18nProvider><ToastProvider>
       <MemoryRouter initialEntries={[url]}>
         <Routes>
           <Route element={<AppShell />}>
@@ -20,7 +21,7 @@ function renderPage(url = '/') {
           </Route>
         </Routes>
       </MemoryRouter>
-    </I18nProvider>,
+    </ToastProvider></I18nProvider>,
   )
 }
 

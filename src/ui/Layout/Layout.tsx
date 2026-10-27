@@ -15,9 +15,10 @@ interface LayoutProps {
   setCount?: ReactNode
   pinnedTags?: ReactNode
   footer?: ReactNode
+  banner?: ReactNode
 }
 
-export function Layout({ jokeCount, setCount, pinnedTags, footer }: LayoutProps) {
+export function Layout({ jokeCount, setCount, pinnedTags, footer, banner }: LayoutProps) {
   const t = useT()
   return (
     <div className={styles.shell}>
@@ -47,6 +48,7 @@ export function Layout({ jokeCount, setCount, pinnedTags, footer }: LayoutProps)
         {footer && <div className={styles.footer}>{footer}</div>}
       </aside>
       <main className={styles.main}>
+        {banner}
         <Outlet />
       </main>
     </div>

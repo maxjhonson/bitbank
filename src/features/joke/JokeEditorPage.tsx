@@ -1,3 +1,4 @@
+import { relativeTime } from '../../i18n/relative'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { getJoke, updateJoke, useJokeLookup, useJokes, usePerformances, useSettings } from '../../db'
@@ -41,13 +42,6 @@ export function JokeEditorPage() {
   return <Editor key={joke.id} joke={joke} />
 }
 
-function relative(t: ReturnType<typeof useT>, from: Date, now: number): string {
-  const min = Math.floor((now - from.getTime()) / 60000)
-  if (min < 1) return t('rel.now')
-  if (min < 60) return t('rel.minutes', { n: min })
-  return t('rel.hours', { n: Math.floor(min / 60) })
-}
-
 function SavedIndicator({ status, savedAt }: { status: 'idle' | 'saving' | 'saved'; savedAt?: Date }) {
   const t = useT()
   const [now, setNow] = useState(() => Date.now())
@@ -57,7 +51,7 @@ function SavedIndicator({ status, savedAt }: { status: 'idle' | 'saving' | 'save
   }, [])
   let text = ''
   if (status === 'saving') text = t('editor.saving')
-  else if (savedAt) text = t('editor.saved', { when: relative(t, savedAt, Math.max(now, savedAt.getTime())) })
+  else if (savedAt) text = t('editor.saved', { when: relativeTime(t, savedAt, Math.max(now, savedAt.getTime())) })
   return <p role="status" className={styles.saved}>{text}</p>
 }
 
