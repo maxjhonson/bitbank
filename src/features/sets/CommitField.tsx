@@ -6,21 +6,27 @@ interface Props {
   onCommit: (value: string) => void
   /** return false to reject the value (field reverts) */
   validate?: (value: string) => boolean
+  /** called when validate rejects the value */
+  onReject?: () => void
+  /** called when an edited value passes validation */
+  onAccept?: () => void
   type?: string
   className?: string
   placeholder?: string
 }
 
 /** Text input that edits locally and commits on blur/Enter. */
-export function CommitField({ label, value, onCommit, validate, type = 'text', className, placeholder }: Props) {
+export function CommitField({ label, value, onCommit, validate, onReject, onAccept, type = 'text', className, placeholder }: Props) {
   const [draft, setDraft] = useState(value)
   useEffect(() => setDraft(value), [value])
   const commit = () => {
     if (draft === value) return
     if (validate && !validate(draft)) {
       setDraft(value)
+      onReject?.()
       return
     }
+    onAccept?.()
     onCommit(draft)
   }
   return (

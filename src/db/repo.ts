@@ -97,6 +97,15 @@ export async function updateSet(id: string, patch: Partial<ComedySet>): Promise<
   await db.sets.update(id, { ...patch, updatedAt: now() })
 }
 
+/** Appends the joke to the end of the set; no-op if it is already there. */
+export async function addJokeToSet(setId: string, jokeId: string): Promise<void> {
+  await db.transaction('rw', db.sets, async () => {
+    const set = await db.sets.get(setId)
+    if (!set || set.items.some((i) => i.jokeId === jokeId)) return
+    await db.sets.update(setId, { items: [...set.items, { id: newId(), jokeId }], updatedAt: now() })
+  })
+}
+
 export async function deleteSet(id: string): Promise<void> {
   await db.sets.delete(id)
 }

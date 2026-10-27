@@ -3,6 +3,8 @@ import { formatMmSs } from '../../domain/time'
 import type { TimeSource } from '../../domain/derive'
 import type { JokeStatus } from '../../domain/types'
 import { StatusBadge } from '../../ui/StatusBadge/StatusBadge'
+import { AddToSetMenu } from './AddToSetMenu'
+import { UsedIn } from './UsedIn'
 import { PerformanceLog } from './PerformanceLog'
 import { RehearsalTimer } from './RehearsalTimer'
 import { TagInput } from './TagInput'
@@ -57,6 +59,8 @@ export function SidePanel({ sec, source, score, trend, jokeId, status, tags, tag
         <span className={styles.label}>{t('editor.tags')}</span>
         <TagInput tags={tags} suggestions={tagSuggestions} onChange={onTags} />
       </div>
+      <UsedIn jokeId={jokeId} />
+      <AddToSetMenu jokeId={jokeId} />
       <RehearsalTimer jokeId={jokeId} />
       <PerformanceLog jokeId={jokeId} />
     </aside>

@@ -1,10 +1,12 @@
 import { relativeTime } from '../../i18n/relative'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getJoke, updateJoke, useJokeLookup, useJokes, usePerformances, useSettings } from '../../db'
 import { jokeScore, jokeTime, scoreTrend } from '../../domain/derive'
 import type { Joke } from '../../domain/types'
 import { useT } from '../../i18n'
+import { Button } from '../../ui/Button/Button'
+import { DeleteJokeDialog } from './DeleteJokeDialog'
 import { SidePanel } from './SidePanel'
 import { TagLinesEditor } from './TagLinesEditor'
 import { VersionHistory } from './VersionHistory'
@@ -62,6 +64,8 @@ function Editor({ joke }: { joke: Joke }) {
   const perfs = usePerformances(joke.id)
   const allJokes = useJokes()
   const [draft, setDraft] = useState<Draft>(() => toDraft(joke))
+  const navigate = useNavigate()
+  const [deleting, setDeleting] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -117,6 +121,17 @@ function Editor({ joke }: { joke: Joke }) {
           versions={joke.versions}
           onRestore={v => setDraft(d => ({ ...d, setup: v.setup, punchline: v.punchline }))}
         />
+        <div>
+          <Button variant="danger" onClick={() => setDeleting(true)}>{t('joke.delete')}</Button>
+        </div>
+        {deleting && (
+          <DeleteJokeDialog
+            jokeId={joke.id}
+            title={joke.title}
+            onClose={() => setDeleting(false)}
+            onDeleted={() => navigate('/', { replace: true })}
+          />
+        )}
       </div>
       <SidePanel
         sec={sec}

@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../../i18n'
 import { formatMmSs } from '../../domain/time'
+import { DeleteJokeDialog } from '../joke/DeleteJokeDialog'
 import { StatusBadge } from '../../ui/StatusBadge/StatusBadge'
 import { Tag } from '../../ui/Tag/Tag'
 import type { LibraryItem } from './filterJokes'
@@ -9,6 +11,7 @@ import styles from './JokeCard.module.css'
 export function JokeCard({ item }: { item: LibraryItem }) {
   const t = useT()
   const { joke } = item
+  const [deleting, setDeleting] = useState(false)
   return (
     <li className={styles.card}>
       <div className={styles.top}>
@@ -40,7 +43,13 @@ export function JokeCard({ item }: { item: LibraryItem }) {
         )}
         <span>{t('lib.runs', { n: item.runs })}</span>
         <span>{t('lib.inSets', { n: item.usedIn })}</span>
+        <button type="button" className={styles.delete} aria-label={t('joke.deleteNamed', { title: joke.title || t('lib.untitled') })} onClick={() => setDeleting(true)}>
+          {t('joke.delete')}
+        </button>
       </div>
+      {deleting && (
+        <DeleteJokeDialog jokeId={joke.id} title={joke.title} onClose={() => setDeleting(false)} onDeleted={() => setDeleting(false)} />
+      )}
     </li>
   )
 }

@@ -47,3 +47,11 @@
   .itemTitle { font-size: 24px; color: #000; }
   .tags, .segue { display: none; }
 }
+.fieldError { color: var(--warning); font-size: 12px; }
+.bank { display: flex; flex-direction: column; gap: 8px; }
+.bankTools { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.bankTools > .input { flex: 1 1 200px; }
+.check { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; color: var(--text-2); }
+.bankItem { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.bankTitle { flex: 1; min-width: 0; font-weight: 600; }
+@media print { .bank { display: none; } }

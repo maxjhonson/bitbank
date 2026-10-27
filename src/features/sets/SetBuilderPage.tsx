@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useT } from '../../i18n'
+import { JokeBank } from './JokeBank'
 import { RunningOrder } from './RunningOrder'
 import { SetHeader } from './SetHeader'
 import { SetStats } from './SetStats'
@@ -25,6 +26,7 @@ export function SetBuilderPage() {
       <SetHeader view={view} />
       <SetStats view={view} />
       <RunningOrder view={view} />
+      <JokeBank view={view} />
     </div>
   )
 }

@@ -143,6 +143,26 @@ describe('SetBuilderPage', () => {
     await waitFor(() => expect(target).toHaveValue('15:00'))
   })
 
+  it('invalid target or buffer shows the m:ss alert, cleared on a valid edit', async () => {
+    const { set } = await seed([60])
+    renderPage(set.id)
+    const target = await screen.findByLabelText('Target (m:ss)')
+    expect(screen.queryByRole('alert')).toBeNull()
+    await userEvent.clear(target)
+    await userEvent.type(target, 'abc')
+    await userEvent.tab()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Use m:ss, for example 15:00.')
+    await userEvent.clear(target)
+    await userEvent.type(target, '20:00')
+    await userEvent.tab()
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+    const buffer = screen.getByLabelText('Buffer (m:ss)')
+    await userEvent.clear(buffer)
+    await userEvent.type(buffer, 'x')
+    await userEvent.tab()
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+  })
+
   it('total updates live when a joke manualTimeSec changes', async () => {
     const { set, jokes } = await seed([300])
     renderPage(set.id)

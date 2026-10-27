@@ -183,6 +183,23 @@ export const en = {
   'set.print': "Print set list",
   'set.duplicate': "Duplicate set",
   'set.timeInvalid': "Use m:ss, for example 15:00.",
+  'bank.title': "Joke bank",
+  'bank.fitsOnly': "Only jokes that fit the remaining time",
+  'bank.add': "Add {title} to set",
+  'bank.empty': "No matching jokes.",
+  'addToSet': "Add to set",
+  'addToSet.new': "New set",
+  'addToSet.added': "Added to {name}",
+  'addToSet.inSet': "{name} (in set)",
+  'addToSet.none': "No sets yet.",
+  'usedIn': "Used in",
+  'usedIn.none': "Not used in any set.",
+  'joke.delete': "Delete joke",
+  'joke.deleteNamed': "Delete {title}",
+  'joke.deleteTitle': "Delete this joke?",
+  'joke.deleteBody': "This also deletes all of its performances. This cannot be undone.",
+  'joke.deleteSets': "These sets will lose it:",
+  'common.cancel': "Cancel",
 } as const
 
 export type TKey = keyof typeof en

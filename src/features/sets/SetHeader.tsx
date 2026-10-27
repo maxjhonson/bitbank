@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../../i18n'
 import { duplicateSet, updateSet } from '../../db'
@@ -10,6 +11,8 @@ import styles from './Sets.module.css'
 export function SetHeader({ view }: { view: SetView }) {
   const t = useT()
   const { set, totals } = view
+  const [badTime, setBadTime] = useState<Record<string, boolean>>({})
+  const flag = (key: string, bad: boolean) => setBadTime(b => ({ ...b, [key]: bad }))
   const w = barWidths(totals.jokesSec, set.bufferSec, set.targetSec)
   const over = totals.over
   const timeField = (label: string, key: 'targetSec' | 'bufferSec') => (
@@ -20,8 +23,11 @@ export function SetHeader({ view }: { view: SetView }) {
         className={styles.input}
         value={formatMmSs(set[key])}
         validate={v => parseMmSs(v) !== null}
+        onReject={() => flag(key, true)}
+        onAccept={() => flag(key, false)}
         onCommit={v => void updateSet(set.id, { [key]: parseMmSs(v)! })}
       />
+      {badTime[key] && <span role="alert" className={styles.fieldError}>{t('set.timeInvalid')}</span>}
     </label>
   )
   return (
