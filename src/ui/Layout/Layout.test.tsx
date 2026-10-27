@@ -50,7 +50,7 @@ describe('Layout', () => {
     expect(container.querySelector('[data-slot="counts"]')).toBeNull()
   })
 
-  it('footer is rendered and also reachable in the mobile top bar', () => {
+  it('footer is present in the DOM', () => {
     renderLayout({ footer: <span>Last backup X</span> })
     expect(screen.getByText('Last backup X')).toBeInTheDocument()
   })
