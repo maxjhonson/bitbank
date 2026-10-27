@@ -1,0 +1,7 @@
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.h1 { margin: 0 0 8px; font: 700 28px var(--font-display); }
+.stats { display: flex; gap: 24px; margin: 0; flex-wrap: wrap; }
+.stats dt { color: var(--text-muted); font-size: 13px; }
+.stats dd { margin: 0; font-size: 20px; color: var(--accent); }
+.grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+.empty { color: var(--text-2); padding: 32px 0; }

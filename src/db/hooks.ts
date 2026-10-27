@@ -1,5 +1,8 @@
+import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { ComedySet, Idea, Joke, Performance, Settings } from '../domain/types'
+import { jokeScore, jokeTime, runCount } from '../domain/derive'
+import { REHEARSAL_VENUE } from '../domain/types'
 import { DEFAULT_SETTINGS, db } from './db'
 
 export function useJokes(): Joke[] | undefined {
@@ -33,4 +36,48 @@ export function useIdeas(): Idea[] | undefined {
 export function useSettings(): Settings {
   const stored = useLiveQuery(async () => (await db.settings.get('settings')) ?? null, [])
   return { ...DEFAULT_SETTINGS, ...(stored ?? {}) }
+}
+
+export interface JokeStat {
+  joke: Joke
+  sec: number
+  score: number | null
+  runs: number
+  usedIn: number
+  /** has at least one non-rehearsal performance */
+  stageTested: boolean
+}
+
+/** Per-joke derived stats; undefined while loading. */
+export function useJokeStats(): Map<string, JokeStat> | undefined {
+  const jokes = useJokes()
+  const perfs = usePerformances()
+  const sets = useSets()
+  const { wordsPerMinute } = useSettings()
+  return useMemo(() => {
+    if (!jokes || !perfs || !sets) return undefined
+    const byJoke = new Map<string, Performance[]>()
+    for (const p of perfs) {
+      const list = byJoke.get(p.jokeId)
+      if (list) list.push(p)
+      else byJoke.set(p.jokeId, [p])
+    }
+    const used = new Map<string, number>()
+    for (const s of sets) {
+      for (const id of new Set(s.items.map(i => i.jokeId))) used.set(id, (used.get(id) ?? 0) + 1)
+    }
+    const out = new Map<string, JokeStat>()
+    for (const joke of jokes) {
+      const jp = byJoke.get(joke.id) ?? []
+      out.set(joke.id, {
+        joke,
+        sec: jokeTime(joke, jp, wordsPerMinute).sec,
+        score: jokeScore(joke, jp),
+        runs: runCount(jp),
+        usedIn: used.get(joke.id) ?? 0,
+        stageTested: jp.some(p => p.venue !== REHEARSAL_VENUE),
+      })
+    }
+    return out
+  }, [jokes, perfs, sets, wordsPerMinute])
 }

@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
-import { Layout } from './ui/Layout/Layout'
+import { AppShell } from './features/shell/AppShell'
 import { NotFoundPage } from './features/NotFoundPage'
 import { LibraryPage } from './features/library/LibraryPage'
 import { JokeEditorPage } from './features/joke/JokeEditorPage'
@@ -13,7 +13,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/sets/:id/stage" element={<StagePage />} />
-      <Route element={<Layout />}>
+      <Route element={<AppShell />}>
         <Route path="/" element={<LibraryPage />} />
         <Route path="/jokes/:id" element={<JokeEditorPage />} />
         <Route path="/sets" element={<SetsPage />} />
