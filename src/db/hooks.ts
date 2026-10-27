@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { ComedySet, Idea, Joke, Performance, Settings } from '../domain/types'
-import { jokeScore, jokeTime, runCount } from '../domain/derive'
+import { jokeScore, jokeTime, runCount, scoreTrend, type TimeSource } from '../domain/derive'
 import { REHEARSAL_VENUE } from '../domain/types'
 import { DEFAULT_SETTINGS, db } from './db'
 
@@ -47,6 +47,8 @@ export interface JokeStat {
   joke: Joke
   sec: number
   score: number | null
+  source: TimeSource
+  trend: number | null
   runs: number
   usedIn: number
   /** has at least one non-rehearsal performance */
@@ -74,9 +76,12 @@ export function useJokeStats(): Map<string, JokeStat> | undefined {
     const out = new Map<string, JokeStat>()
     for (const joke of jokes) {
       const jp = byJoke.get(joke.id) ?? []
+      const time = jokeTime(joke, jp, wordsPerMinute)
       out.set(joke.id, {
         joke,
-        sec: jokeTime(joke, jp, wordsPerMinute).sec,
+        sec: time.sec,
+        source: time.source,
+        trend: scoreTrend(jp),
         score: jokeScore(joke, jp),
         runs: runCount(jp),
         usedIn: used.get(joke.id) ?? 0,

@@ -4,6 +4,8 @@ export interface LibraryItem {
   joke: Joke
   sec: number
   score: number | null
+  source?: 'measured' | 'manual' | 'estimated'
+  trend?: number | null
   runs: number
   usedIn: number
 }

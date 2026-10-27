@@ -13,7 +13,10 @@ export function JokeCard({ item }: { item: LibraryItem }) {
     <li className={styles.card}>
       <div className={styles.top}>
         <StatusBadge status={joke.status} />
-        <span className="mono">{formatMmSs(item.sec)}</span>
+        <span>
+          <span className="mono">{formatMmSs(item.sec)}</span>
+          {item.source && <span className={styles.source}> {t(`time.${item.source}`)}</span>}
+        </span>
       </div>
       <h2 className={styles.title}>
         <Link to={`/jokes/${joke.id}`} className={styles.link}>
@@ -32,6 +35,9 @@ export function JokeCard({ item }: { item: LibraryItem }) {
         <span className="mono" aria-label={t('lib.score')}>
           {item.score === null ? '–' : item.score.toFixed(1)}
         </span>
+        {item.trend != null && item.trend !== 0 && (
+          <span aria-label={t('editor.scoreTrend')}>{item.trend > 0 ? '▲' : '▼'}</span>
+        )}
         <span>{t('lib.runs', { n: item.runs })}</span>
         <span>{t('lib.inSets', { n: item.usedIn })}</span>
       </div>

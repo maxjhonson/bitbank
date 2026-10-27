@@ -125,6 +125,6 @@ describe('JokeEditorPage', () => {
     renderPage(j.id)
     expect(await screen.findByText('1:05')).toBeInTheDocument()
     expect(screen.getByText('Manual')).toBeInTheDocument()
-    expect(screen.getByTestId('score-trend-placeholder')).toBeInTheDocument()
+    expect(screen.getByTestId('score-trend')).toBeInTheDocument()
   })
 })

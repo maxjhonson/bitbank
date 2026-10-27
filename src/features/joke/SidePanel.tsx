@@ -3,6 +3,8 @@ import { formatMmSs } from '../../domain/time'
 import type { TimeSource } from '../../domain/derive'
 import type { JokeStatus } from '../../domain/types'
 import { StatusBadge } from '../../ui/StatusBadge/StatusBadge'
+import { PerformanceLog } from './PerformanceLog'
+import { RehearsalTimer } from './RehearsalTimer'
 import { TagInput } from './TagInput'
 import styles from './SidePanel.module.css'
 
@@ -12,6 +14,8 @@ interface Props {
   sec: number
   source: TimeSource
   score: number | null
+  trend: number | null
+  jokeId: string
   status: JokeStatus
   tags: string[]
   tagSuggestions: string[]
@@ -19,7 +23,7 @@ interface Props {
   onTags(tags: string[]): void
 }
 
-export function SidePanel({ sec, source, score, status, tags, tagSuggestions, onStatus, onTags }: Props) {
+export function SidePanel({ sec, source, score, trend, jokeId, status, tags, tagSuggestions, onStatus, onTags }: Props) {
   const t = useT()
   return (
     <aside className={styles.panel}>
@@ -32,8 +36,9 @@ export function SidePanel({ sec, source, score, status, tags, tagSuggestions, on
           <dt>{t('editor.score')}</dt>
           <dd>
             <span className="mono">{score === null ? '–' : score.toFixed(1)}</span>{' '}
-            {/* Placeholder until Task 8 adds the real score trend. */}
-            <span className={styles.source} data-testid="score-trend-placeholder" aria-label={t('editor.scoreTrend')}>–</span>
+            <span className={styles.source} data-testid="score-trend" aria-label={t('editor.scoreTrend')}>
+              {trend === null ? '–' : `${trend > 0 ? '▲ +' : trend < 0 ? '▼ ' : '= '}${trend.toFixed(1)}`}
+            </span>
           </dd>
         </div>
       </dl>
@@ -52,6 +57,8 @@ export function SidePanel({ sec, source, score, status, tags, tagSuggestions, on
         <span className={styles.label}>{t('editor.tags')}</span>
         <TagInput tags={tags} suggestions={tagSuggestions} onChange={onTags} />
       </div>
+      <RehearsalTimer jokeId={jokeId} />
+      <PerformanceLog jokeId={jokeId} />
     </aside>
   )
 }

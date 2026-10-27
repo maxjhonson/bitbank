@@ -2,7 +2,7 @@ import { relativeTime } from '../../i18n/relative'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { getJoke, updateJoke, useJokeLookup, useJokes, usePerformances, useSettings } from '../../db'
-import { jokeScore, jokeTime } from '../../domain/derive'
+import { jokeScore, jokeTime, scoreTrend } from '../../domain/derive'
 import type { Joke } from '../../domain/types'
 import { useT } from '../../i18n'
 import { SidePanel } from './SidePanel'
@@ -122,6 +122,8 @@ function Editor({ joke }: { joke: Joke }) {
         sec={sec}
         source={source}
         score={score}
+        trend={scoreTrend(perfs ?? [])}
+        jokeId={joke.id}
         status={joke.status}
         tags={joke.tags}
         tagSuggestions={suggestions}

@@ -1,0 +1,5 @@
+.timer { display: flex; flex-direction: column; gap: 8px; }
+.heading { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.row { display: flex; gap: 12px; align-items: center; font-size: 20px; }
+.dialog { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg, var(--surface)); }
+.dialog p { margin: 0 0 8px; font-size: 14px; }
