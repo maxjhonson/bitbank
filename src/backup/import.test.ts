@@ -54,6 +54,25 @@ describe('rejection', () => {
     })
   }
 
+  for (const v of [0, -1, 1.5]) {
+    it(`schemaVersion ${v} rejected with a clear message`, () => {
+      const r = parseBackup(JSON.stringify({ app: 'bitbank', schemaVersion: v }))
+      expect(r.ok).toBe(false)
+      if (!r.ok) expect(r.errors[0]).toMatch(/schemaVersion/)
+    })
+  }
+
+  it('non-ISO timestamps are rejected', async () => {
+    await seed()
+    for (const bad of ['yesterday', '2026-10-01', 'Oct 1 2026', '1']) {
+      const f = clone(await fileOf())
+      f.data.jokes[0].createdAt = bad
+      const r = parseBackup(JSON.stringify(f))
+      expect(r.ok, bad).toBe(false)
+      if (!r.ok) expect(r.errors[0]).toMatch(/^jokes\[0\]: createdAt:/)
+    }
+  })
+
   it('newer schema message is clear', () => {
     const r = parseBackup(JSON.stringify({ app: 'bitbank', schemaVersion: 99 }))
     expect(!r.ok && r.errors[0]).toMatch(/newer version/)

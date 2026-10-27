@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { addPerformance, deletePerformance, updatePerformance, usePerformances } from '../../db'
 import { ratingToScore, scoreToRating } from '../../domain/rating'
-import { formatMmSs, parseMmSs } from '../../domain/time'
+import { formatMmSs, parseMmSs, todayLocalISO } from '../../domain/time'
 import { REHEARSAL_VENUE, type Performance } from '../../domain/types'
 import { useT } from '../../i18n'
 import { Button } from '../../ui/Button/Button'
 import styles from './PerformanceLog.module.css'
-
-const today = () => new Date().toISOString().slice(0, 10)
 
 interface FormState { date: string; venue: string; duration: string; rating: number }
 
@@ -20,7 +18,7 @@ function PerfForm({ initial, submitLabel, onSubmit, onCancel }: {
   const t = useT()
   const [f, setF] = useState(initial)
   const [error, setError] = useState('')
-  const rehearsal = f.venue === REHEARSAL_VENUE
+  const rehearsal = f.venue.trim() === REHEARSAL_VENUE
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     let durationSec: number | undefined
@@ -97,7 +95,7 @@ export function PerformanceLog({ jokeId }: { jokeId: string }) {
     <section className={styles.log} aria-label={t('perf.title')}>
       <h3 className={styles.heading}>{t('perf.title')}</h3>
       <PerfForm
-        initial={{ date: today(), venue: '', duration: '', rating: 3 }}
+        initial={{ date: todayLocalISO(), venue: '', duration: '', rating: 3 }}
         submitLabel={t('perf.add')}
         onSubmit={async v => { await addPerformance({ jokeId, ...v }) }}
       />

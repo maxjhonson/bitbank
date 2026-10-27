@@ -14,3 +14,9 @@ export function parseMmSs(text: string): number | null {
   if (m) return Number(m[1]) * 60
   return null
 }
+
+/** Today's date as YYYY-MM-DD in the user's local time zone (not UTC). */
+export function todayLocalISO(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}

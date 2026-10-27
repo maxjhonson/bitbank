@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { addPerformance } from '../../db'
-import { formatMmSs } from '../../domain/time'
+import { formatMmSs, todayLocalISO } from '../../domain/time'
 import { REHEARSAL_VENUE } from '../../domain/types'
 import { useT } from '../../i18n'
 import { Button } from '../../ui/Button/Button'
@@ -14,7 +14,7 @@ export function RehearsalTimer({ jokeId }: { jokeId: string }) {
 
   const finish = async (save: boolean) => {
     if (save && pending !== null) {
-      await addPerformance({ jokeId, date: new Date().toISOString().slice(0, 10), venue: REHEARSAL_VENUE, durationSec: pending, score: 0 })
+      await addPerformance({ jokeId, date: todayLocalISO(), venue: REHEARSAL_VENUE, durationSec: pending, score: 0 })
     }
     setPending(null)
     sw.reset()

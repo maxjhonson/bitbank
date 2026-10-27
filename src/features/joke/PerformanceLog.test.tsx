@@ -70,6 +70,29 @@ describe('PerformanceLog', () => {
   })
 })
 
+describe('PerformanceLog edge cases', () => {
+  it('clearing duration on edit removes durationSec from the DB', async () => {
+    const j = await createJoke()
+    await addPerformance({ jokeId: j.id, date: '2026-09-01', venue: 'Club', score: 4, durationSec: 90 })
+    renderLog(j.id)
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+    const li = (await screen.findAllByRole('listitem'))[0]
+    await userEvent.clear(within(li).getByLabelText('Duration (m:ss)'))
+    await userEvent.click(within(li).getByRole('button', { name: 'Save' }))
+    await waitFor(async () => expect('durationSec' in ((await db.performances.toArray())[0] as object)).toBe(false))
+  })
+
+  it('venue with surrounding spaces still counts as rehearsal (no rating field, score 0)', async () => {
+    const j = await createJoke()
+    renderLog(j.id)
+    await type(await screen.findByLabelText('Venue'), ' Rehearsal ')
+    expect(screen.queryByLabelText('Rating')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Add performance' }))
+    await waitFor(async () => expect(await db.performances.count()).toBe(1))
+    expect((await db.performances.toArray())[0]).toMatchObject({ venue: 'Rehearsal', score: 0 })
+  })
+})
+
 describe('SidePanel derived values', () => {
   it('after a real performance shows measured source and average score', async () => {
     const j = await createJoke()

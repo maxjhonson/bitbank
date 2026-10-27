@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const SUPPORTED_SCHEMA_VERSION = 1
 
-const isoTimestamp = z.string().refine((s) => !Number.isNaN(Date.parse(s)), 'must be an ISO timestamp')
+const isoTimestamp = z.iso.datetime({ offset: true, message: 'must be an ISO timestamp' })
 const dateOnly = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD')

@@ -113,6 +113,14 @@ describe('performances', () => {
     await repo.deletePerformance(p.id)
     expect(await db.performances.get(p.id)).toBeUndefined()
   })
+
+  it('updating with durationSec: undefined removes the stored field', async () => {
+    const p = await repo.addPerformance({ jokeId: 'j', date: '2026-01-01', venue: 'V', score: 4, durationSec: 60 })
+    await repo.updatePerformance(p.id, { durationSec: undefined })
+    const got = await db.performances.get(p.id)
+    expect(got?.durationSec).toBeUndefined()
+    expect('durationSec' in (got as object)).toBe(false)
+  })
 })
 
 describe('settings', () => {

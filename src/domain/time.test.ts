@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatMmSs, parseMmSs } from './time'
+import { formatMmSs, parseMmSs, todayLocalISO } from './time'
 
 describe('formatMmSs', () => {
   it('formats seconds as m:ss', () => {
@@ -29,5 +29,12 @@ describe('parseMmSs', () => {
     expect(parseMmSs('')).toBeNull()
     expect(parseMmSs('1:5x')).toBeNull()
     expect(parseMmSs('1:75')).toBeNull()
+  })
+})
+
+describe('todayLocalISO', () => {
+  it('uses local date parts, not UTC', () => {
+    expect(todayLocalISO(new Date(2026, 0, 5, 23, 30))).toBe('2026-01-05')
+    expect(todayLocalISO(new Date(2026, 11, 31, 0, 5))).toBe('2026-12-31')
   })
 })

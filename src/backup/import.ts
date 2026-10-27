@@ -35,6 +35,9 @@ export function parseBackup(text: string): ParseResult {
   if (typeof head.schemaVersion !== 'number' || !Number.isInteger(head.schemaVersion)) {
     return fail('The backup has no valid schemaVersion.')
   }
+  if (head.schemaVersion < 1) {
+    return fail(`The backup has an invalid schemaVersion (${head.schemaVersion}); it must be 1 or higher.`)
+  }
   if (head.schemaVersion > SUPPORTED_SCHEMA_VERSION) {
     return fail(
       `This backup was made by a newer version of Bit Bank (schema ${head.schemaVersion}; this app supports up to ${SUPPORTED_SCHEMA_VERSION}). Update the app and try again.`,
