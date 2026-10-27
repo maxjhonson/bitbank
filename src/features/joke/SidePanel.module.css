@@ -1,0 +1,9 @@
+.panel { display: flex; flex-direction: column; gap: 20px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md, 8px); }
+.stats { display: flex; gap: 24px; margin: 0; }
+.stats dt { color: var(--text-muted); font-size: 13px; }
+.stats dd { margin: 0; font-size: 20px; }
+.source { font-size: 13px; color: var(--text-2); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.label, .field label { font-size: 13px; color: var(--text-muted); }
+.statusRow { display: flex; gap: 8px; align-items: center; }
+.select { min-height: 44px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; flex: 1; }

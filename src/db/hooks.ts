@@ -13,6 +13,11 @@ export function useJoke(id: string | undefined): Joke | undefined {
   return useLiveQuery(() => (id ? db.jokes.get(id) : undefined), [id])
 }
 
+/** Like useJoke but distinguishes loading (undefined) from missing (null). */
+export function useJokeLookup(id: string | undefined): Joke | null | undefined {
+  return useLiveQuery(async () => (id ? ((await db.jokes.get(id)) ?? null) : null), [id])
+}
+
 export function usePerformances(jokeId?: string): Performance[] | undefined {
   return useLiveQuery(
     () => (jokeId ? db.performances.where('jokeId').equals(jokeId).toArray() : db.performances.toArray()),
