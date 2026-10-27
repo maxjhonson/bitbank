@@ -23,6 +23,7 @@ export const es: Record<TKey, string> = {
   'notebook.promoted': 'Promovida',
   'notebook.openJoke': 'Abrir chiste',
   'notebook.delete': 'Eliminar',
+  'notebook.error': 'Algo salió mal. No se guardó tu idea.',
   'page.notebook': 'Libreta',
   'page.settings': 'Ajustes',
   'page.notFound': 'Página no encontrada',

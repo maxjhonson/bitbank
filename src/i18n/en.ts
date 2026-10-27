@@ -21,6 +21,7 @@ export const en = {
   'notebook.promoted': 'Promoted',
   'notebook.openJoke': 'Open joke',
   'notebook.delete': 'Delete',
+  'notebook.error': 'Something went wrong. Your idea was not saved.',
   'page.notebook': 'Notebook',
   'page.settings': 'Settings',
   'page.notFound': 'Page not found',

@@ -1,13 +1,14 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { addIdea, db } from '../../db'
 import { I18nProvider } from '../../i18n'
+import { ToastProvider } from '../../ui/Toast/Toast'
 import { NotebookPage } from './NotebookPage'
 
 function renderPage() {
-  return render(<I18nProvider><MemoryRouter><NotebookPage /></MemoryRouter></I18nProvider>)
+  return render(<I18nProvider><ToastProvider><MemoryRouter><NotebookPage /></MemoryRouter></ToastProvider></I18nProvider>)
 }
 
 beforeEach(async () => {
@@ -70,5 +71,26 @@ describe('NotebookPage', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Delete/ }))
     await waitFor(async () => expect(await db.ideas.count()).toBe(0))
     expect(await screen.findByText(/No ideas yet/)).toBeInTheDocument()
+  })
+
+  it('ignores Enter during IME composition', async () => {
+    renderPage()
+    const input = await screen.findByLabelText('Quick capture')
+    await userEvent.type(input, 'caf')
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true })
+    fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 })
+    expect(await db.ideas.count()).toBe(0)
+    fireEvent.keyDown(input, { key: 'Enter' })
+    await waitFor(async () => expect(await db.ideas.count()).toBe(1))
+  })
+
+  it('keeps input and shows a toast when saving fails', async () => {
+    const spy = vi.spyOn(db.ideas, 'add').mockRejectedValueOnce(new Error('boom'))
+    renderPage()
+    const input = await screen.findByLabelText('Quick capture')
+    await userEvent.type(input, 'keep me{Enter}')
+    expect(await screen.findByText(/not saved/)).toBeInTheDocument()
+    expect(input).toHaveValue('keep me')
+    spy.mockRestore()
   })
 })

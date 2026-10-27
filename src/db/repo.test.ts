@@ -94,6 +94,17 @@ describe('ideas idempotent', () => {
   })
 })
 
+describe('ideas re-promote', () => {
+  it('re-creates a joke when the promoted joke was deleted', async () => {
+    const idea = await repo.addIdea('again')
+    const a = await repo.promoteIdea(idea.id)
+    await db.jokes.delete(a.id)
+    const b = await repo.promoteIdea(idea.id)
+    expect(b.id).not.toBe(a.id)
+    expect((await db.ideas.get(idea.id))?.promotedJokeId).toBe(b.id)
+  })
+})
+
 describe('performances', () => {
   it('add, update, delete', async () => {
     const p = await repo.addPerformance({ jokeId: 'j', date: '2026-01-01', venue: 'V', score: 4 })

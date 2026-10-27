@@ -2,23 +2,27 @@ import { useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../../i18n'
 import { addIdea, deleteIdea, promoteIdea, useIdeas } from '../../db'
+import { useToast } from '../../ui/Toast/Toast'
 import { Button } from '../../ui/Button/Button'
 import styles from './Notebook.module.css'
 
 export function IdeaInbox() {
   const t = useT()
   const ideas = useIdeas()
+  const toast = useToast()
   const [text, setText] = useState('')
   const sorted = [...(ideas ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key !== 'Enter') return
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return
     e.preventDefault()
     const v = text.trim()
     if (!v) return
-    setText('')
-    void addIdea(v)
+    addIdea(v).then(() => setText(''), () => toast(t('notebook.error')))
   }
+
+  const run = (p: Promise<unknown>) => void p.catch(() => toast(t('notebook.error')))
 
   return (
     <div className={styles.page}>
@@ -43,9 +47,9 @@ export function IdeaInbox() {
                   <Link to={`/jokes/${i.promotedJokeId}`} className={styles.link}>{t('notebook.openJoke')}</Link>
                 </>
               ) : (
-                <Button onClick={() => void promoteIdea(i.id)}>{t('notebook.promote')}</Button>
+                <Button onClick={() => run(promoteIdea(i.id))}>{t('notebook.promote')}</Button>
               )}
-              <Button variant="danger" aria-label={`${t('notebook.delete')}: ${i.text}`} onClick={() => void deleteIdea(i.id)}>×</Button>
+              <Button variant="danger" aria-label={`${t('notebook.delete')}: ${i.text}`} onClick={() => run(deleteIdea(i.id))}>×</Button>
             </span>
           </li>
         ))}
