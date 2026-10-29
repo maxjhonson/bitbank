@@ -130,6 +130,17 @@ describe('ChunkEditorPage', () => {
     await waitFor(async () => expect((await db.chunks.get(chunk.id))!.items[0]).toEqual({ jokeId: jokes[0].id, segue: 'Speaking of cats' }))
   })
 
+  it('a segue typed then an immediate remove click both persist', async () => {
+    const { chunk, jokes } = await seed(3)
+    renderPage(chunk.id)
+    await screen.findAllByTestId('row-title')
+    await userEvent.type(screen.getAllByLabelText('Segue to next joke')[0], 'Keep me')
+    await userEvent.click(screen.getByRole('button', { name: 'Remove J3' }))
+    await waitFor(async () => {
+      expect((await db.chunks.get(chunk.id))!.items).toEqual([{ jokeId: jokes[0].id, segue: 'Keep me' }, { jokeId: jokes[1].id }])
+    })
+  })
+
   it('retired joke shows a retired badge', async () => {
     const { chunk } = await seed(1)
     await db.jokes.toCollection().modify({ status: 'retired' })

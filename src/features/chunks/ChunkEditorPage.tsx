@@ -5,7 +5,7 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { updateChunk, useChunkLookup, useJokeStats, useSets, type JokeStat } from '../../db'
+import { updateChunk, updateChunkItems, useChunkLookup, useJokeStats, useSets, type JokeStat } from '../../db'
 import { isChunkItem, resolveChunk } from '../../domain/chunks'
 import { formatMmSs } from '../../domain/time'
 import type { Chunk } from '../../domain/types'
@@ -44,7 +44,7 @@ function Row({ index, jokeId, stat, last, chunkId, items }: {
           type="button"
           className={styles.remove}
           aria-label={t('chunk.remove', { title })}
-          onClick={() => void updateChunk(chunkId, { items: items.filter(i => i.jokeId !== jokeId) })}
+          onClick={() => void updateChunkItems(chunkId, cur => cur.filter(i => i.jokeId !== jokeId))}
         >
           ×
         </button>
@@ -56,14 +56,14 @@ function Row({ index, jokeId, stat, last, chunkId, items }: {
           value={item?.segue ?? ''}
           placeholder={t('chunk.segue')}
           onCommit={v =>
-            void updateChunk(chunkId, {
-              items: items.map(i => {
+            void updateChunkItems(chunkId, cur =>
+              cur.map(i => {
                 if (i.jokeId !== jokeId) return i
                 const { segue: _drop, ...rest } = i
                 void _drop
                 return v ? { ...rest, segue: v } : rest
               }),
-            })
+            )
           }
         />
       )}
@@ -122,7 +122,7 @@ function Picker({ chunk, stats }: { chunk: Chunk; stats: Map<string, JokeStat> }
                   type="button"
                   className={styles.pickBtn}
                   aria-label={t('chunk.add', { title })}
-                  onClick={() => void updateChunk(chunk.id, { items: [...chunk.items, { jokeId: s.joke.id }] })}
+                  onClick={() => void updateChunkItems(chunk.id, cur => (cur.some(i => i.jokeId === s.joke.id) ? cur : [...cur, { jokeId: s.joke.id }]))}
                 >
                   {title}
                 </button>
@@ -167,10 +167,11 @@ export function ChunkEditorPage() {
 
   function onDragEnd({ active, over }: DragEndEvent) {
     if (!chunk || !over || active.id === over.id) return
-    const from = chunk.items.findIndex(i => i.jokeId === active.id)
-    const to = chunk.items.findIndex(i => i.jokeId === over.id)
-    if (from < 0 || to < 0) return
-    void updateChunk(chunk.id, { items: moveItem(chunk.items, from, to) })
+    void updateChunkItems(chunk.id, cur => {
+      const from = cur.findIndex(i => i.jokeId === active.id)
+      const to = cur.findIndex(i => i.jokeId === over.id)
+      return from < 0 || to < 0 ? cur : moveItem(cur, from, to)
+    })
   }
 
   return (

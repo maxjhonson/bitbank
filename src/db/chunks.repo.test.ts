@@ -117,6 +117,27 @@ describe('chunks repo', () => {
     expect((await db.sets.get(other.id))!.updatedAt).toBe(otherBefore)
   })
 
+  it('updateChunkItems applies fn to the latest stored items, so stale-snapshot writes both land', async () => {
+    const c = await repo.createChunk({ items: [{ jokeId: 'a' }] })
+    const stale = c.items
+    await repo.updateChunkItems(c.id, () => [...stale, { jokeId: 'b' }])
+    await repo.updateChunkItems(c.id, (items) => [...items, { jokeId: 'c' }])
+    expect((await repo.getChunk(c.id))!.items.map((i) => i.jokeId)).toEqual(['a', 'b', 'c'])
+    // fn receives stored items, not the stale snapshot
+    let seen: string[] = []
+    await repo.updateChunkItems(c.id, (items) => { seen = items.map((i) => i.jokeId); return items })
+    expect(seen).toEqual(['a', 'b', 'c'])
+  })
+
+  it('updateChunkItems prunes stale skips and bumps updatedAt', async () => {
+    const c = await repo.createChunk({ items: [{ jokeId: 'a' }, { jokeId: 'b' }] })
+    const s = await setWith([{ id: 'i', kind: 'chunk', chunkId: c.id, skippedJokeIds: ['a', 'b'] }])
+    await new Promise((r) => setTimeout(r, 5))
+    await repo.updateChunkItems(c.id, (items) => items.filter((i) => i.jokeId !== 'a'))
+    expect(((await db.sets.get(s.id))!.items[0] as ChunkSetItem).skippedJokeIds).toEqual(['b'])
+    expect((await repo.getChunk(c.id))!.updatedAt > c.updatedAt).toBe(true)
+  })
+
   it('updateChunk bumps updatedAt', async () => {
     const c = await repo.createChunk()
     await new Promise((r) => setTimeout(r, 5))
