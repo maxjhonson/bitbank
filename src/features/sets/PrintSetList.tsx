@@ -11,7 +11,7 @@ export function PrintSetList({ view }: { view: SetView }) {
       <ol className="print-list">
         {stageLines(view.rows).map(l => (
           <li key={l.key}>
-            {l.chunkStart && <small className="print-chunk">{l.chunkTitle || t('lib.untitled')}</small>}
+            {l.chunkStart && <small className="print-chunk" aria-hidden="true">{l.chunkTitle || t('lib.untitled')}</small>}
             {l.title || t('lib.untitled')}
           </li>
         ))}

@@ -63,7 +63,7 @@ export function DeleteJokeDialog({ jokeId, title, onClose, onDeleted }: Props) {
   }
   function trapTab(e: React.KeyboardEvent) {
     if (e.key !== 'Tab') return
-    const els = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? [])
+    const els = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]') ?? [])
     if (els.length === 0) return
     const first = els[0]
     const last = els[els.length - 1]
