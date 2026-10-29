@@ -5,3 +5,5 @@ export const SCHEMA_V1 = {
   ideas: 'id, createdAt',
   settings: 'id',
 } as const
+
+export const SCHEMA_V2 = { ...SCHEMA_V1, chunks: 'id, updatedAt' } as const

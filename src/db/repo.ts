@@ -1,5 +1,5 @@
-import { isChunkItem } from '../domain/chunks'
-import type { ComedySet, Idea, Joke, Performance, Settings } from '../domain/types'
+import { breakApart, isChunkItem, resolveChunk } from '../domain/chunks'
+import type { Chunk, ChunkSetItem, ComedySet, Idea, Joke, Performance, Settings } from '../domain/types'
 import { db, getSettings } from './db'
 
 const now = () => new Date().toISOString()
@@ -45,8 +45,19 @@ export async function updateJoke(id: string, patch: Partial<Joke>): Promise<void
   await db.jokes.update(id, next)
 }
 
+export class JokeInChunkError extends Error {
+  chunks: Chunk[]
+  constructor(chunks: Chunk[]) {
+    super('Joke is used in a chunk')
+    this.name = 'JokeInChunkError'
+    this.chunks = chunks
+  }
+}
+
 export async function deleteJoke(id: string): Promise<void> {
-  await db.transaction('rw', db.jokes, db.performances, db.sets, async () => {
+  await db.transaction('rw', db.jokes, db.performances, db.sets, db.chunks, async () => {
+    const inChunks = await chunksUsingJoke(id)
+    if (inChunks.length) throw new JokeInChunkError(inChunks)
     await db.jokes.delete(id)
     await db.performances.where('jokeId').equals(id).delete()
     const affected = (await db.sets.toArray()).filter((s) => s.items.some((i) => !isChunkItem(i) && i.jokeId === id))
@@ -59,6 +70,96 @@ export async function deleteJoke(id: string): Promise<void> {
 
 export async function setsUsingJoke(jokeId: string): Promise<ComedySet[]> {
   return (await db.sets.toArray()).filter((s) => s.items.some((i) => !isChunkItem(i) && i.jokeId === jokeId))
+}
+
+export async function createChunk(init: Partial<Chunk> = {}): Promise<Chunk> {
+  const ts = now()
+  const chunk: Chunk = { title: '', items: [], notes: '', ...init, id: newId(), createdAt: ts, updatedAt: ts }
+  await db.chunks.add(chunk)
+  return chunk
+}
+
+export function getChunk(id: string): Promise<Chunk | undefined> {
+  return db.chunks.get(id)
+}
+
+export async function updateChunk(id: string, patch: Partial<Chunk>): Promise<void> {
+  await db.chunks.update(id, { ...patch, updatedAt: now() })
+}
+
+export async function deleteChunk(id: string): Promise<void> {
+  await db.transaction('rw', db.chunks, db.sets, async () => {
+    await db.chunks.delete(id)
+    const affected = (await db.sets.toArray()).filter((s) => s.items.some((i) => isChunkItem(i) && i.chunkId === id))
+    const ts = now()
+    for (const s of affected) {
+      await db.sets.update(s.id, {
+        items: s.items.filter((i) => !(isChunkItem(i) && i.chunkId === id)),
+        updatedAt: ts,
+      })
+    }
+  })
+}
+
+export async function chunksUsingJoke(jokeId: string): Promise<Chunk[]> {
+  return (await db.chunks.toArray()).filter((c) => c.items.some((i) => i.jokeId === jokeId))
+}
+
+export async function setsUsingChunk(chunkId: string): Promise<ComedySet[]> {
+  return (await db.sets.toArray()).filter((s) => s.items.some((i) => isChunkItem(i) && i.chunkId === chunkId))
+}
+
+/** Appends the chunk to the end of the set; no-op if it is already there. */
+export async function addChunkToSet(setId: string, chunkId: string): Promise<void> {
+  await db.transaction('rw', db.sets, async () => {
+    const set = await db.sets.get(setId)
+    if (!set || set.items.some((i) => isChunkItem(i) && i.chunkId === chunkId)) return
+    await db.sets.update(setId, { items: [...set.items, { id: newId(), kind: 'chunk', chunkId }], updatedAt: now() })
+  })
+}
+
+/** Toggles one joke's skip on a set's chunk item, pruning skip ids no longer in the chunk. */
+export async function setChunkJokeSkipped(
+  setId: string,
+  itemId: string,
+  jokeId: string,
+  skipped: boolean,
+): Promise<void> {
+  await db.transaction('rw', db.sets, db.chunks, async () => {
+    const set = await db.sets.get(setId)
+    const item = set?.items.find((i) => i.id === itemId)
+    if (!set || !item || !isChunkItem(item)) return
+    const chunk = await db.chunks.get(item.chunkId)
+    const inChunk = new Set(chunk?.items.map((i) => i.jokeId) ?? [])
+    const skip = new Set((item.skippedJokeIds ?? []).filter((id) => inChunk.has(id)))
+    if (skipped) skip.add(jokeId)
+    else skip.delete(jokeId)
+    const { skippedJokeIds: _old, ...rest } = item
+    const next: ChunkSetItem = skip.size ? { ...rest, skippedJokeIds: [...skip] } : rest
+    await db.sets.update(setId, { items: set.items.map((i) => (i.id === itemId ? next : i)), updatedAt: now() })
+  })
+}
+
+/** Replaces the chunk item, in place, with joke items for its ticked jokes not already in the set. */
+export async function breakApartChunk(setId: string, itemId: string): Promise<void> {
+  await db.transaction('rw', db.sets, db.chunks, db.jokes, async () => {
+    const set = await db.sets.get(setId)
+    const idx = set ? set.items.findIndex((i) => i.id === itemId) : -1
+    const item = set?.items[idx]
+    if (!set || !item || !isChunkItem(item)) return
+    const chunk = await db.chunks.get(item.chunkId)
+    if (!chunk) return
+    const existing = await db.jokes.bulkGet(chunk.items.map((i) => i.jokeId))
+    const nums = new Map<string, { sec: number; score: number | null }>()
+    existing.forEach((j) => j && nums.set(j.id, { sec: 0, score: null }))
+    const { entries } = resolveChunk(chunk, item.skippedJokeIds, nums)
+    const inSet = new Set(set.items.flatMap((i) => (isChunkItem(i) ? [] : [i.jokeId])))
+    const jokes = breakApart(item, entries, inSet, newId)
+    await db.sets.update(setId, {
+      items: [...set.items.slice(0, idx), ...jokes, ...set.items.slice(idx + 1)],
+      updatedAt: now(),
+    })
+  })
 }
 
 export async function addPerformance(

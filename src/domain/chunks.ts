@@ -54,14 +54,20 @@ export function breakApart(
   alreadyInSet: Set<string>,
   newId: () => string,
 ): JokeSetItem[] {
-  const ticked = entries.filter(e => e.ticked)
-  const all: Omit<JokeSetItem, 'id'>[] = ticked.map((e, i) => {
-    const out: Omit<JokeSetItem, 'id'> = { kind: 'joke', jokeId: e.jokeId }
-    const seg = i === ticked.length - 1 ? item.segue : e.spokenSegue
+  // Dedupe first so opener/closer/segue land on the first/last COPIED joke.
+  const copied = entries.filter(e => e.ticked && !alreadyInSet.has(e.jokeId))
+  return copied.map((e, i) => {
+    const out: JokeSetItem = { id: newId(), kind: 'joke', jokeId: e.jokeId }
+    const last = i === copied.length - 1
+    const seg = last ? (item.segue ?? e.spokenSegue) : e.spokenSegue
     if (seg) out.segue = seg
     if (item.role === 'opener' && i === 0) out.role = 'opener'
-    if (item.role === 'closer' && i === ticked.length - 1) out.role = 'closer'
+    if (item.role === 'closer' && last) out.role = 'closer'
     return out
   })
-  return all.filter(o => !alreadyInSet.has(o.jokeId)).map(o => ({ id: newId(), ...o }))
+}
+
+/** Adds `kind: 'joke'` to legacy set items that lack a kind (Dexie v2 upgrade, backup migration). */
+export function withItemKinds(items: unknown[]): SetItem[] {
+  return items.map(i => ((i as { kind?: string }).kind ? i : { ...(i as object), kind: 'joke' }) as SetItem)
 }

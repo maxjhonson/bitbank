@@ -1,7 +1,7 @@
 import { isChunkItem } from '../domain/chunks'
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import type { ComedySet, Idea, Joke, Performance, Settings } from '../domain/types'
+import type { Chunk, ComedySet, Idea, Joke, Performance, Settings } from '../domain/types'
 import { jokeScore, jokeTime, runCount, scoreTrend, type TimeSource } from '../domain/derive'
 import { REHEARSAL_VENUE } from '../domain/types'
 import { DEFAULT_SETTINGS, db } from './db'
@@ -37,6 +37,15 @@ export function useSet(id: string | undefined): ComedySet | undefined {
 /** Like useSet but distinguishes loading (undefined) from missing (null). */
 export function useSetLookup(id: string | undefined): ComedySet | null | undefined {
   return useLiveQuery(async () => (id ? ((await db.sets.get(id)) ?? null) : null), [id])
+}
+
+export function useChunks(): Chunk[] | undefined {
+  return useLiveQuery(() => db.chunks.toArray(), [])
+}
+
+/** Distinguishes loading (undefined) from missing (null). */
+export function useChunkLookup(id: string | undefined): Chunk | null | undefined {
+  return useLiveQuery(async () => (id ? ((await db.chunks.get(id)) ?? null) : null), [id])
 }
 
 export function useIdeas(): Idea[] | undefined {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveChunk, breakApart, isChunkItem } from './chunks'
+import { resolveChunk, breakApart, isChunkItem, withItemKinds } from './chunks'
 import type { Chunk, ChunkSetItem } from './types'
 
 const chunk = (items: Chunk['items']): Chunk => ({ id: 'c', title: 'C', items, notes: '', createdAt: '', updatedAt: '' })
@@ -55,6 +55,34 @@ describe('breakApart', () => {
     const { entries } = resolveChunk(c, ['c'], nums)
     expect(breakApart(item({ role: 'closer' }), entries, new Set(['a']), nid)).toEqual([
       { id: 'n1', kind: 'joke', jokeId: 'b', role: 'closer' },
+    ])
+  })
+  it('opener/closer/segue go to first/last COPIED joke after dedupe', () => {
+    n = 0
+    const { entries } = resolveChunk(c, undefined, nums)
+    expect(breakApart(item({ role: 'opener' }), entries, new Set(['a']), nid)).toEqual([
+      { id: 'n1', kind: 'joke', jokeId: 'b', role: 'opener' },
+      { id: 'n2', kind: 'joke', jokeId: 'c' },
+    ])
+    n = 0
+    expect(breakApart(item({ role: 'closer', segue: 'S' }), entries, new Set(['c']), nid)).toEqual([
+      { id: 'n1', kind: 'joke', jokeId: 'a', segue: 'x' },
+      { id: 'n2', kind: 'joke', jokeId: 'b', role: 'closer', segue: 'S' },
+    ])
+  })
+})
+
+describe('withItemKinds', () => {
+  it('adds kind joke to legacy items and leaves typed items alone', () => {
+    const out = withItemKinds([
+      { id: '1', jokeId: 'j' },
+      { id: '2', kind: 'chunk', chunkId: 'c' },
+      { id: '3', kind: 'joke', jokeId: 'k' },
+    ])
+    expect(out).toEqual([
+      { id: '1', kind: 'joke', jokeId: 'j' },
+      { id: '2', kind: 'chunk', chunkId: 'c' },
+      { id: '3', kind: 'joke', jokeId: 'k' },
     ])
   })
 })
