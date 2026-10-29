@@ -1,6 +1,5 @@
-import type { JokeSetItem } from '../domain/types'
 import { isChunkItem } from '../domain/chunks'
-import { db, getSettings, updateSettings } from '../db'
+import { db, updateSettings } from '../db'
 import { jokeScore, jokeTime } from '../domain/derive'
 import { formatMmSs } from '../domain/time'
 import type { Performance, Settings } from '../domain/types'
@@ -18,15 +17,16 @@ async function readSettings(): Promise<Settings> {
 
 export async function buildBackup(now: Date = new Date()): Promise<BackupFile> {
   // One read transaction so the snapshot is consistent.
-  const [jokes, performances, sets, ideas, settings] = await db.transaction(
+  const [jokes, performances, sets, ideas, chunks, settings] = await db.transaction(
     'r',
-    [db.jokes, db.performances, db.sets, db.ideas, db.settings],
+    [db.jokes, db.performances, db.sets, db.ideas, db.chunks, db.settings],
     async () =>
       [
         await db.jokes.toArray(),
         await db.performances.toArray(),
-        (await db.sets.toArray()).map((st) => ({ ...st, items: st.items.filter((i): i is JokeSetItem => !isChunkItem(i)) })),
+        await db.sets.toArray(),
         await db.ideas.toArray(),
+        await db.chunks.toArray(),
         await readSettings(),
       ] as const,
   )
@@ -34,8 +34,8 @@ export async function buildBackup(now: Date = new Date()): Promise<BackupFile> {
     app: 'bitbank',
     schemaVersion: SUPPORTED_SCHEMA_VERSION,
     exportedAt: now.toISOString(),
-    counts: { jokes: jokes.length, performances: performances.length, sets: sets.length, ideas: ideas.length },
-    data: { jokes, performances, sets, ideas, settings },
+    counts: { jokes: jokes.length, performances: performances.length, sets: sets.length, ideas: ideas.length, chunks: chunks.length },
+    data: { jokes, performances, sets, ideas, chunks, settings },
   }
 }
 
@@ -57,12 +57,18 @@ export async function exportJson(
 }
 
 export async function exportMarkdown(): Promise<string> {
-  const [jokes, performances, sets, settings] = await Promise.all([
-    db.jokes.toArray(),
-    db.performances.toArray(),
-    db.sets.toArray(),
-    getSettings(),
-  ])
+  const [jokes, performances, sets, chunks, settings] = await db.transaction(
+    'r',
+    [db.jokes, db.performances, db.sets, db.chunks, db.settings],
+    async () => [
+      await db.jokes.toArray(),
+      await db.performances.toArray(),
+      await db.sets.toArray(),
+      await db.chunks.toArray(),
+      await readSettings(),
+    ] as const,
+  )
+  const chunkById = new Map(chunks.map((c) => [c.id, c]))
   const perfsByJoke = new Map<string, Performance[]>()
   for (const p of performances) {
     const list = perfsByJoke.get(p.jokeId) ?? []
@@ -102,7 +108,20 @@ export async function exportMarkdown(): Promise<string> {
     out.push(meta.join(' · '), '')
     let n = 0
     for (const item of s.items) {
-      if (isChunkItem(item)) continue
+      if (isChunkItem(item)) {
+        const c = chunkById.get(item.chunkId)
+        if (!c) continue
+        n += 1
+        const role = item.role ? ` [${item.role}]` : ''
+        out.push(`${n}. ${c.title.trim() || 'Untitled chunk'}${role}`)
+        if (item.segue) out.push(`   - Segue: ${item.segue}`)
+        const skip = new Set(item.skippedJokeIds ?? [])
+        for (const ci of c.items) {
+          const cj = jokeById.get(ci.jokeId)
+          if (cj && !skip.has(ci.jokeId)) out.push(`   - ${titleOf(cj)}`)
+        }
+        continue
+      }
       const j = jokeById.get(item.jokeId)
       if (!j) continue
       n += 1

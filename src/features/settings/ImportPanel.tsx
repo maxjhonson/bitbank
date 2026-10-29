@@ -13,7 +13,7 @@ import { Button } from '../../ui/Button/Button'
 import { useToast } from '../../ui/Toast/Toast'
 import styles from './Settings.module.css'
 
-const TABLES = ['jokes', 'performances', 'sets', 'ideas'] as const
+const TABLES = ['jokes', 'performances', 'sets', 'ideas', 'chunks'] as const
 
 function readText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {

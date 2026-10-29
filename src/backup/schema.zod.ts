@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const SUPPORTED_SCHEMA_VERSION = 1
+export const SUPPORTED_SCHEMA_VERSION = 2
 
 const isoTimestamp = z.iso.datetime({ offset: true, message: 'must be an ISO timestamp' })
 const dateOnly = z
@@ -43,6 +43,33 @@ export const performanceSchema = z.object({
   updatedAt: isoTimestamp,
 })
 
+export const chunkSchema = z.object({
+  id,
+  title: z.string(),
+  items: z.array(z.object({ jokeId: id, segue: z.string().optional() })),
+  notes: z.string(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+const setItemSchema = z.discriminatedUnion('kind', [
+  z.object({
+    id,
+    kind: z.literal('joke'),
+    jokeId: id,
+    role: z.enum(['opener', 'closer']).optional(),
+    segue: z.string().optional(),
+  }),
+  z.object({
+    id,
+    kind: z.literal('chunk'),
+    chunkId: id,
+    skippedJokeIds: z.array(z.string()).optional(),
+    role: z.enum(['opener', 'closer']).optional(),
+    segue: z.string().optional(),
+  }),
+])
+
 export const setSchema = z.object({
   id,
   name: z.string(),
@@ -50,17 +77,7 @@ export const setSchema = z.object({
   venue: z.string().optional(),
   targetSec: z.number().min(0),
   bufferSec: z.number().min(0),
-  items: z.array(
-    z
-      .object({
-        id,
-        kind: z.literal('joke').optional(),
-        jokeId: id,
-        role: z.enum(['opener', 'closer']).optional(),
-        segue: z.string().optional(),
-      })
-      .transform(i => ({ ...i, kind: 'joke' as const })),
-  ),
+  items: z.array(setItemSchema),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,
 })
@@ -85,6 +102,7 @@ const counts = z.object({
   performances: z.number().int(),
   sets: z.number().int(),
   ideas: z.number().int(),
+  chunks: z.number().int().optional(),
 })
 
 export const backupFileSchema = z.object({
@@ -97,6 +115,7 @@ export const backupFileSchema = z.object({
     performances: z.array(performanceSchema),
     sets: z.array(setSchema),
     ideas: z.array(ideaSchema),
+    chunks: z.array(chunkSchema),
     settings: settingsSchema,
   }),
 })

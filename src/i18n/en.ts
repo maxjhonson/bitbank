@@ -160,6 +160,7 @@ export const en = {
   'timer.save': 'Save as rehearsal',
   'timer.discard': 'Discard',
   'import.table.ideas': 'Ideas',
+  'import.table.chunks': 'Chunks',
   'set.new': "New set",
   'set.emptyCta': 'Create your first set',
   'set.empty': "No sets yet. Create your first one.",

@@ -16,7 +16,7 @@ describe('export', () => {
     const now = new Date(2026, 9, 26, 21, 30)
     const out = await exportJson(now)
     expect(out.filename).toBe('bitbank-backup-2026-10-26-2130.json')
-    expect(out.counts).toEqual({ jokes: 2, performances: 2, sets: 1, ideas: 1 })
+    expect(out.counts).toEqual({ jokes: 2, performances: 2, sets: 1, ideas: 1, chunks: 0 })
     expect(out.json).toContain('\n  "app": "bitbank"')
     expect(backupFileSchema.safeParse(JSON.parse(out.json)).success).toBe(true)
     expect((await db.settings.get('settings'))?.lastExportAt).toBe(now.toISOString())

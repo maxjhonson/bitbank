@@ -1,11 +1,11 @@
 import { isChunkItem } from '../domain/chunks'
 import { db, normalizeTags } from '../db'
-import type { ComedySet, Idea, Joke, Performance } from '../domain/types'
+import type { Chunk, ComedySet, Idea, Joke, Performance } from '../domain/types'
 import { migrateBackup } from './migrations'
 import { backupFileSchema, SUPPORTED_SCHEMA_VERSION, type BackupFile } from './schema.zod'
 
-type TableName = 'jokes' | 'performances' | 'sets' | 'ideas'
-const TABLES: TableName[] = ['jokes', 'performances', 'sets', 'ideas']
+type TableName = 'jokes' | 'performances' | 'sets' | 'ideas' | 'chunks'
+const TABLES: TableName[] = ['jokes', 'performances', 'sets', 'ideas', 'chunks']
 
 export type TableCounts = { inFile: number; new: number; newer: number; older: number; identical: number }
 export type ImportPreview = Record<TableName, TableCounts>
@@ -69,11 +69,12 @@ function dedupeFile(file: BackupFile): BackupFile {
       performances: dedupe(file.data.performances),
       sets: dedupe(file.data.sets),
       ideas: dedupe(file.data.ideas),
+      chunks: dedupe(file.data.chunks),
     },
   }
 }
 
-type Rec = Joke | Performance | ComedySet | Idea
+type Rec = Joke | Performance | ComedySet | Idea | Chunk
 type Kind = 'new' | 'newer' | 'older' | 'identical'
 
 function classify(file: Rec, local: Rec | undefined): Kind {
@@ -110,17 +111,18 @@ export async function applyImport(file: BackupFile, mode: 'merge' | 'replace'): 
   const data = { ...deduped, jokes: deduped.jokes.map((j) => ({ ...j, tags: normalizeTags(j.tags) })) }
   const result: ImportResult = { added: 0, updated: 0, skipped: 0, removedDangling: 0 }
 
-  await db.transaction('rw', [db.jokes, db.performances, db.sets, db.ideas, db.settings], async () => {
+  await db.transaction('rw', [db.jokes, db.performances, db.sets, db.ideas, db.chunks, db.settings], async () => {
     // Reset counters in case Dexie retries the transaction callback.
     result.added = result.updated = result.skipped = result.removedDangling = 0
     if (mode === 'replace') {
-      await Promise.all([db.jokes, db.performances, db.sets, db.ideas, db.settings].map((t) => t.clear()))
+      await Promise.all([db.jokes, db.performances, db.sets, db.ideas, db.chunks, db.settings].map((t) => t.clear()))
       await db.jokes.bulkPut(data.jokes)
       await db.performances.bulkPut(data.performances)
       await db.sets.bulkPut(data.sets)
       await db.ideas.bulkPut(data.ideas)
+      await db.chunks.bulkPut(data.chunks)
       await db.settings.put(data.settings)
-      result.added = data.jokes.length + data.performances.length + data.sets.length + data.ideas.length
+      result.added = data.jokes.length + data.performances.length + data.sets.length + data.ideas.length + data.chunks.length
     } else {
       for (const t of TABLES) {
         const records = data[t] as Rec[]
@@ -147,8 +149,16 @@ export async function applyImport(file: BackupFile, mode: 'merge' | 'replace'): 
       await db.performances.bulkDelete(danglingPerfs.map((p) => p.id))
       result.removedDangling += danglingPerfs.length
     }
+    for (const c of await db.chunks.toArray()) {
+      const keptItems = c.items.filter((ci) => jokeIds.has(ci.jokeId))
+      if (keptItems.length !== c.items.length) {
+        result.removedDangling += c.items.length - keptItems.length
+        await db.chunks.put({ ...c, items: keptItems })
+      }
+    }
+    const chunkIds = new Set((await db.chunks.toCollection().primaryKeys()) as string[])
     for (const s of await db.sets.toArray()) {
-      const kept = s.items.filter((i) => isChunkItem(i) || jokeIds.has(i.jokeId))
+      const kept = s.items.filter((i) => (isChunkItem(i) ? chunkIds.has(i.chunkId) : jokeIds.has(i.jokeId)))
       if (kept.length !== s.items.length) {
         result.removedDangling += s.items.length - kept.length
         await db.sets.put({ ...s, items: kept })

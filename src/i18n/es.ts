@@ -162,6 +162,7 @@ export const es: Record<TKey, string> = {
   'timer.save': 'Guardar como ensayo',
   'timer.discard': 'Descartar',
   'import.table.ideas': 'Ideas',
+  'import.table.chunks': 'Bloques',
   'set.new': "Nuevo set",
   'set.emptyCta': 'Crea tu primer set',
   'set.empty': "Aún no hay sets. Crea el primero.",
