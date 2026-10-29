@@ -54,4 +54,16 @@
 .check { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; color: var(--text-2); }
 .bankItem { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .bankTitle { flex: 1; min-width: 0; font-weight: 600; }
-@media print { .bank { display: none; } }
+.h3 { margin: 12px 0 0; font: 600 15px var(--font-display); color: var(--text-2); }
+.toggle { min-width: 44px; min-height: 44px; background: transparent; color: var(--text-2); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: 16px; }
+.chunkCount { color: var(--text-muted); font-size: 13px; }
+.chunkBody { display: flex; flex-direction: column; gap: 8px; padding-left: 12px; border-left: 2px solid var(--accent-soft); }
+.entries { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.entry { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.entry .check { flex: 1 1 160px; }
+.entryOff { color: var(--text-muted); }
+.badge { padding: 2px 8px; border-radius: 10px; background: var(--surface-2); color: var(--text-muted); font-size: 12px; }
+.spoken { flex-basis: 100%; padding-left: 28px; color: var(--text-2); font-size: 13px; font-style: italic; }
+.breakApart { align-self: flex-start; min-height: 44px; padding: 0 14px; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font: 600 14px var(--font-body); }
+.breakApart:disabled { color: var(--text-muted); cursor: not-allowed; }
+@media print { .bank, .toggle, .chunkBody { display: none; } }

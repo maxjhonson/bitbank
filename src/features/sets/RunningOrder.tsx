@@ -4,19 +4,58 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../../i18n'
-import { updateSetItems } from '../../db'
+import { breakApartChunk, setChunkJokeSkipped, updateSetItems } from '../../db'
 import { formatMmSs } from '../../domain/time'
 import { Tag } from '../../ui/Tag/Tag'
 import { CommitField } from './CommitField'
 import { moveItem } from './reorder'
-import type { SetRow, SetView } from './useSetView'
+import type { ChunkRow, SetRow, SetView } from './useSetView'
 import styles from './Sets.module.css'
+
+function ChunkEntries({ row, setId, title }: { row: ChunkRow; setId: string; title: string }) {
+  const t = useT()
+  return (
+    <div className={styles.chunkBody}>
+      <ul className={styles.entries} aria-label={t('set.chunk.jokes', { title })}>
+        {row.entries.map(e => {
+          const jt = e.joke.title || t('lib.untitled')
+          return (
+            <li key={e.jokeId} className={`${styles.entry} ${e.ticked ? '' : styles.entryOff}`}>
+              <label className={styles.check}>
+                <input
+                  type="checkbox"
+                  checked={e.ticked}
+                  onChange={ev => void setChunkJokeSkipped(setId, row.itemId, e.jokeId, !ev.target.checked)}
+                />
+                {jt}
+              </label>
+              {e.joke.status === 'retired' && <span className={styles.badge}>{t('chunk.retired')}</span>}
+              <span className="mono">{formatMmSs(e.sec)}</span>
+              <span className="mono">{e.score === null ? '–' : e.score.toFixed(1)}</span>
+              {e.spokenSegue && <span className={styles.spoken}>{e.spokenSegue}</span>}
+            </li>
+          )
+        })}
+      </ul>
+      <button
+        type="button"
+        className={styles.breakApart}
+        disabled={row.tickedCount === 0}
+        onClick={() => void breakApartChunk(setId, row.itemId)}
+      >
+        {t('set.chunk.breakApart')}
+      </button>
+    </div>
+  )
+}
 
 function Row({ row, index, view }: { row: SetRow; index: number; view: SetView }) {
   const t = useT()
   const { set } = view
+  const [open, setOpen] = useState(false)
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: row.itemId })
   const title = (row.kind === 'chunk' ? row.chunk.title : row.joke.title) || t('lib.untitled')
   const patchItem = (patch: { role?: 'opener' | 'closer'; segue?: string }) =>
@@ -33,9 +72,25 @@ function Row({ row, index, view }: { row: SetRow; index: number; view: SetView }
           ::
         </button>
         <span className={`${styles.slot} mono`}>{row.slot}</span>
+        {row.kind === 'chunk' && (
+          <button
+            type="button"
+            className={`${styles.toggle} no-print`}
+            aria-expanded={open}
+            aria-label={t(open ? 'set.chunk.collapse' : 'set.chunk.expand', { title })}
+            onClick={() => setOpen(o => !o)}
+          >
+            {open ? '▾' : '▸'}
+          </button>
+        )}
         <div className={styles.itemBody}>
           {row.kind === 'chunk' ? (
-            <span className={styles.itemTitle} data-testid="row-title">{title}</span>
+            <>
+              <Link to={`/chunks/${row.chunk.id}`} className={styles.itemTitle} data-testid="row-title">{title}</Link>
+              <span className={`${styles.chunkCount} mono`}>
+                {t(row.tickedCount === 1 ? 'count.jokes.one' : 'count.jokes', { n: row.tickedCount })}
+              </span>
+            </>
           ) : (
             <>
               <Link to={`/jokes/${row.joke.id}`} className={styles.itemTitle} data-testid="row-title">{title}</Link>
@@ -71,6 +126,7 @@ function Row({ row, index, view }: { row: SetRow; index: number; view: SetView }
         placeholder={t('set.segue')}
         onCommit={v => patchItem({ segue: v || undefined })}
       />
+      {row.kind === 'chunk' && open && <ChunkEntries row={row} setId={set.id} title={title} />}
     </li>
   )
 }

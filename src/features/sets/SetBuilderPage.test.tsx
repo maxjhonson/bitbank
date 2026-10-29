@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { addPerformance, createJoke, createSet, db, updateJoke } from '../../db'
+import { addPerformance, createChunk, createJoke, createSet, db, updateJoke } from '../../db'
 import { I18nProvider } from '../../i18n'
 import { ToastProvider } from '../../ui/Toast/Toast'
 import { SetBuilderPage } from './SetBuilderPage'
@@ -31,7 +31,7 @@ const titles = () => screen.getAllByTestId('row-title').map(e => e.textContent)
 
 beforeEach(async () => {
   localStorage.setItem('bitbank.lang', 'en')
-  await Promise.all([db.jokes.clear(), db.performances.clear(), db.sets.clear()])
+  await Promise.all([db.jokes.clear(), db.performances.clear(), db.sets.clear(), db.chunks.clear()])
 })
 afterEach(() => vi.restoreAllMocks())
 
@@ -226,5 +226,116 @@ describe('SetBuilderPage', () => {
     })
     await waitFor(() => expect(titles()).toEqual(['J2', 'J1', 'J3']))
     expect(within(screen.getAllByRole('listitem')[0]).getByTestId('row-title')).toHaveTextContent('J2')
+  })
+
+  describe('chunk card', () => {
+    async function seedChunk(extra: Parameters<typeof createSet>[0] = {}) {
+      const jokes = []
+      for (let i = 0; i < 3; i++) jokes.push(await createJoke({ title: `J${i + 1}`, manualTimeSec: 60 }))
+      const chunk = await createChunk({
+        title: 'Bit',
+        items: [{ jokeId: jokes[0].id, segue: 'then' }, { jokeId: jokes[1].id }, { jokeId: jokes[2].id }],
+      })
+      const set = await createSet({
+        name: 'Show', targetSec: 900, bufferSec: 60,
+        items: [{ id: 'ci', kind: 'chunk', chunkId: chunk.id }], ...extra,
+      })
+      return { jokes, chunk, set }
+    }
+    const storedItems = async (id: string) => (await db.sets.get(id))!.items
+
+    it('is collapsed, expands, and ticking a joke off updates the total and persists as skippedJokeIds', async () => {
+      const { set, jokes, chunk } = await seedChunk()
+      renderPage(set.id)
+      const toggle = await screen.findByRole('button', { name: /Expand Bit/ })
+      expect(toggle).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByRole('checkbox', { name: 'J1' })).toBeNull()
+      expect(screen.getByTestId('set-total')).toHaveTextContent('4:00 of 15:00')
+      await userEvent.click(toggle)
+      expect(toggle).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByRole('checkbox', { name: 'J2' })).toBeChecked()
+      await userEvent.click(screen.getByRole('checkbox', { name: 'J2' }))
+      await waitFor(() => expect(screen.getByTestId('set-total')).toHaveTextContent('3:00 of 15:00'))
+      expect(screen.getByRole('checkbox', { name: 'J2' })).not.toBeChecked()
+      expect(await storedItems(set.id)).toEqual([{ id: 'ci', kind: 'chunk', chunkId: chunk.id, skippedJokeIds: [jokes[1].id] }])
+      await userEvent.click(screen.getByRole('checkbox', { name: 'J2' }))
+      await waitFor(async () => expect((await storedItems(set.id))[0]).not.toHaveProperty('skippedJokeIds'))
+    })
+
+    it('shows retired badge and spoken segue when expanded', async () => {
+      const { set, jokes } = await seedChunk()
+      await updateJoke(jokes[2].id, { status: 'retired' })
+      renderPage(set.id)
+      await userEvent.click(await screen.findByRole('button', { name: /Expand Bit/ }))
+      expect(screen.getByText('retired')).toBeInTheDocument()
+      expect(screen.getByText('then')).toBeInTheDocument()
+    })
+
+    it('unticking never changes the chunk in the library', async () => {
+      const { set, chunk } = await seedChunk()
+      renderPage(set.id)
+      await userEvent.click(await screen.findByRole('button', { name: /Expand Bit/ }))
+      await userEvent.click(screen.getByRole('checkbox', { name: 'J1' }))
+      await waitFor(async () => expect((await storedItems(set.id))[0]).toHaveProperty('skippedJokeIds'))
+      expect(await db.chunks.get(chunk.id)).toEqual(chunk)
+    })
+
+    it('Break apart replaces the card with joke rows for the ticked jokes, in order', async () => {
+      const { set, jokes } = await seedChunk()
+      renderPage(set.id)
+      await userEvent.click(await screen.findByRole('button', { name: /Expand Bit/ }))
+      await userEvent.click(screen.getByRole('checkbox', { name: 'J2' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Break apart' }))
+      await waitFor(() => expect(titles()).toEqual(['J1', 'J3']))
+      const items = await storedItems(set.id)
+      expect(items.map(i => (i as { jokeId: string }).jokeId)).toEqual([jokes[0].id, jokes[2].id])
+    })
+
+    it('Break apart is disabled when no joke is ticked', async () => {
+      const { set } = await seedChunk()
+      renderPage(set.id)
+      await userEvent.click(await screen.findByRole('button', { name: /Expand Bit/ }))
+      for (const n of ['J1', 'J2', 'J3']) await userEvent.click(screen.getByRole('checkbox', { name: n }))
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Break apart' })).toBeDisabled())
+    })
+
+    it('reordering a chunk card by keyboard moves it as a block', async () => {
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+        const idx = Number(this.closest('[data-row-index]')?.getAttribute('data-row-index') ?? -1)
+        const top = idx < 0 ? 0 : idx * 50
+        return { x: 0, y: top, top, left: 0, width: 300, height: 50, right: 300, bottom: top + 50, toJSON() {} } as DOMRect
+      })
+      const solo = await createJoke({ title: 'Solo', manualTimeSec: 30 })
+      const { set } = await seedChunk()
+      await db.sets.update(set.id, { items: [...(await storedItems(set.id)), { id: 'si', kind: 'joke', jokeId: solo.id }] })
+      renderPage(set.id)
+      const handle = await screen.findByRole('button', { name: 'Reorder Bit' })
+      handle.focus()
+      fireEvent.keyDown(handle, { code: 'Space', key: ' ' })
+      await new Promise(r => setTimeout(r, 20))
+      fireEvent.keyDown(document, { code: 'ArrowDown', key: 'ArrowDown' })
+      await new Promise(r => setTimeout(r, 20))
+      fireEvent.keyDown(document, { code: 'Space', key: ' ' })
+      await waitFor(async () => expect((await storedItems(set.id)).map(i => i.id)).toEqual(['si', 'ci']))
+      await waitFor(() => expect(titles()).toEqual(['Solo', 'Bit']))
+    })
+
+    it('removing a chunk item does not delete the chunk', async () => {
+      const { set, chunk } = await seedChunk()
+      renderPage(set.id)
+      await userEvent.click(await screen.findByRole('button', { name: 'Remove Bit' }))
+      await waitFor(async () => expect(await storedItems(set.id)).toEqual([]))
+      expect(await db.chunks.get(chunk.id)).toBeTruthy()
+    })
+
+    it('role and set-level segue persist on a chunk item', async () => {
+      const { set } = await seedChunk()
+      renderPage(set.id)
+      await userEvent.selectOptions(await screen.findByLabelText('Role'), 'opener')
+      const seg = screen.getByLabelText('Segue')
+      await userEvent.type(seg, 'next up')
+      fireEvent.blur(seg)
+      await waitFor(async () => expect((await storedItems(set.id))[0]).toMatchObject({ kind: 'chunk', role: 'opener', segue: 'next up' }))
+    })
   })
 })
