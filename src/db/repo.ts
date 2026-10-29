@@ -1,3 +1,4 @@
+import { isChunkItem } from '../domain/chunks'
 import type { ComedySet, Idea, Joke, Performance, Settings } from '../domain/types'
 import { db, getSettings } from './db'
 
@@ -48,16 +49,16 @@ export async function deleteJoke(id: string): Promise<void> {
   await db.transaction('rw', db.jokes, db.performances, db.sets, async () => {
     await db.jokes.delete(id)
     await db.performances.where('jokeId').equals(id).delete()
-    const affected = (await db.sets.toArray()).filter((s) => s.items.some((i) => i.jokeId === id))
+    const affected = (await db.sets.toArray()).filter((s) => s.items.some((i) => !isChunkItem(i) && i.jokeId === id))
     const ts = now()
     for (const s of affected) {
-      await db.sets.update(s.id, { items: s.items.filter((i) => i.jokeId !== id), updatedAt: ts })
+      await db.sets.update(s.id, { items: s.items.filter((i) => isChunkItem(i) || i.jokeId !== id), updatedAt: ts })
     }
   })
 }
 
 export async function setsUsingJoke(jokeId: string): Promise<ComedySet[]> {
-  return (await db.sets.toArray()).filter((s) => s.items.some((i) => i.jokeId === jokeId))
+  return (await db.sets.toArray()).filter((s) => s.items.some((i) => !isChunkItem(i) && i.jokeId === jokeId))
 }
 
 export async function addPerformance(
@@ -113,8 +114,8 @@ export async function updateSetItems(
 export async function addJokeToSet(setId: string, jokeId: string): Promise<void> {
   await db.transaction('rw', db.sets, async () => {
     const set = await db.sets.get(setId)
-    if (!set || set.items.some((i) => i.jokeId === jokeId)) return
-    await db.sets.update(setId, { items: [...set.items, { id: newId(), jokeId }], updatedAt: now() })
+    if (!set || set.items.some((i) => !isChunkItem(i) && i.jokeId === jokeId)) return
+    await db.sets.update(setId, { items: [...set.items, { id: newId(), kind: 'joke', jokeId }], updatedAt: now() })
   })
 }
 

@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useT } from '../../i18n'
 import { createSet, duplicateSet, deleteSet, updateSet, useJokeStats, useSets } from '../../db'
-import { setTotals } from '../../domain/derive'
+import { setTotals, type ResolvedItem } from '../../domain/derive'
+import { isChunkItem } from '../../domain/chunks'
 import { formatMmSs } from '../../domain/time'
 import { Button } from '../../ui/Button/Button'
 import { CommitField } from './CommitField'
@@ -27,12 +28,13 @@ export function SetListPage() {
       )}
       <ul className={styles.list}>
         {sorted.map(s => {
-          const byJoke = new Map<string, { sec: number; score: number | null }>()
+          const resolved: ResolvedItem[] = []
           for (const i of s.items) {
+            if (isChunkItem(i)) continue
             const st = stats?.get(i.jokeId)
-            if (st) byJoke.set(i.jokeId, { sec: st.sec, score: st.score })
+            if (st) resolved.push({ itemId: i.id, sec: st.sec, score: st.score, jokeScores: [st.score] })
           }
-          const totals = setTotals(s, byJoke)
+          const totals = setTotals(s, resolved)
           return (
             <li key={s.id} className={styles.listRow}>
               <CommitField

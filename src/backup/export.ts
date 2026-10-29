@@ -1,3 +1,5 @@
+import type { JokeSetItem } from '../domain/types'
+import { isChunkItem } from '../domain/chunks'
 import { db, getSettings, updateSettings } from '../db'
 import { jokeScore, jokeTime } from '../domain/derive'
 import { formatMmSs } from '../domain/time'
@@ -23,7 +25,7 @@ export async function buildBackup(now: Date = new Date()): Promise<BackupFile> {
       [
         await db.jokes.toArray(),
         await db.performances.toArray(),
-        await db.sets.toArray(),
+        (await db.sets.toArray()).map((st) => ({ ...st, items: st.items.filter((i): i is JokeSetItem => !isChunkItem(i)) })),
         await db.ideas.toArray(),
         await readSettings(),
       ] as const,
@@ -100,6 +102,7 @@ export async function exportMarkdown(): Promise<string> {
     out.push(meta.join(' · '), '')
     let n = 0
     for (const item of s.items) {
+      if (isChunkItem(item)) continue
       const j = jokeById.get(item.jokeId)
       if (!j) continue
       n += 1

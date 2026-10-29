@@ -42,19 +42,27 @@ export function runCount(perfs: Performance[]): number {
   return real(perfs).length
 }
 
+export interface ResolvedItem {
+  itemId: string
+  sec: number
+  score: number | null
+  jokeScores: (number | null)[]
+}
+
 export function setTotals(
-  set: ComedySet,
-  jokes: Map<string, { sec: number; score: number | null }>,
+  set: Pick<ComedySet, 'targetSec' | 'bufferSec'>,
+  items: ResolvedItem[],
 ): { jokesSec: number; totalSec: number; remainingSec: number; avgScore: number | null; untestedCount: number; over: boolean } {
   let jokesSec = 0
   let untestedCount = 0
   const scores: number[] = []
-  for (const item of set.items) {
-    const j = jokes.get(item.jokeId)
-    if (!j) continue
-    jokesSec += j.sec
-    if (j.score === null) untestedCount++
-    else scores.push(j.score)
+  for (const item of items) {
+    jokesSec += item.sec
+    if (item.jokeScores.length === 0) untestedCount++
+    for (const s of item.jokeScores) {
+      if (s === null) untestedCount++
+      else scores.push(s)
+    }
   }
   const totalSec = jokesSec + set.bufferSec
   return {
@@ -67,19 +75,16 @@ export function setTotals(
   }
 }
 
-export function weakSpots(set: ComedySet, scores: Map<string, number | null>): string[] {
-  const n = set.items.length
+export function weakSpots(items: ResolvedItem[]): string[] {
+  const n = items.length
   if (n < 3) return []
-  const scored = set.items.flatMap(i => {
-    const s = scores.get(i.jokeId)
-    return s === null || s === undefined ? [] : [s]
-  })
+  const scored = items.flatMap(i => (i.score === null ? [] : [i.score]))
   if (scored.length === 0) return []
   const threshold = mean(scored) - 1.5
   const out: string[] = []
   for (let i = 1; i <= n - 2; i++) {
-    const s = scores.get(set.items[i].jokeId)
-    if (s !== null && s !== undefined && s <= threshold + 1e-9) out.push(set.items[i].id)
+    const s = items[i].score
+    if (s !== null && s <= threshold + 1e-9) out.push(items[i].itemId)
   }
   return out
 }

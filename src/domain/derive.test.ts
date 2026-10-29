@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { jokeTime, jokeScore, scoreTrend, runCount, setTotals, weakSpots } from './derive'
-import { REHEARSAL_VENUE, type ComedySet, type Joke, type Performance } from './types'
+import { jokeTime, jokeScore, scoreTrend, runCount, setTotals, weakSpots, type ResolvedItem } from './derive'
+import { REHEARSAL_VENUE, type Joke, type Performance } from './types'
 
 const joke = (o: Partial<Joke> = {}): Joke => ({
   id: 'j1', title: 't', premise: '', setup: '', punchline: '', tagLines: [], notes: '',
@@ -14,10 +14,6 @@ const perf = (score: number, o: Partial<Performance> = {}): Performance => {
     score, createdAt: `2026-01-01T00:00:${String(n).padStart(2, '0')}`, updatedAt: '', ...o,
   }
 }
-const set = (ids: string[], o: Partial<ComedySet> = {}): ComedySet => ({
-  id: 's', name: 's', targetSec: 900, bufferSec: 60,
-  items: ids.map((j, i) => ({ id: 'i' + i, jokeId: j })), createdAt: '', updatedAt: '', ...o,
-})
 
 describe('Joke time', () => {
   it('empty joke is estimated 0', () => {
@@ -88,37 +84,53 @@ describe('Runs', () => {
   })
 })
 
+const ri = (itemId: string, sec: number, score: number | null, jokeScores?: (number | null)[]): ResolvedItem => ({
+  itemId,
+  sec,
+  score,
+  jokeScores: jokeScores ?? [score],
+})
+const tset = { targetSec: 900, bufferSec: 60 }
+
 describe('Set total', () => {
   it('zero items', () => {
-    expect(setTotals(set([]), new Map())).toEqual({ jokesSec: 0, totalSec: 60, remainingSec: 840, avgScore: null, untestedCount: 0, over: false })
+    expect(setTotals(tset, [])).toEqual({ jokesSec: 0, totalSec: 60, remainingSec: 840, avgScore: null, untestedCount: 0, over: false })
   })
-  it('sums, skips missing, counts untested, over', () => {
-    const m = new Map([['a', { sec: 500, score: 8 }], ['b', { sec: 400, score: null }]])
-    const t = setTotals(set(['a', 'b', 'zzz']), m)
+  it('sums, counts untested, over', () => {
+    const t = setTotals(tset, [ri('i0', 500, 8), ri('i1', 400, null)])
     expect(t).toEqual({ jokesSec: 900, totalSec: 960, remainingSec: -60, avgScore: 8, untestedCount: 1, over: true })
   })
   it('not over when equal', () => {
-    const m = new Map([['a', { sec: 840, score: 5 }]])
-    expect(setTotals(set(['a']), m).over).toBe(false)
+    expect(setTotals(tset, [ri('i0', 840, 5)]).over).toBe(false)
+  })
+  it('chunk item counts untested jokes and averages scored ones', () => {
+    const t = setTotals(tset, [ri('c', 100, 8, [8, null])])
+    expect(t.untestedCount).toBe(1)
+    expect(t.avgScore).toBe(8)
+  })
+  it('item with no jokes counts as untested', () => {
+    expect(setTotals(tset, [ri('c', 0, null, [])]).untestedCount).toBe(1)
   })
 })
 
 describe('Weak spot', () => {
-  const sc = (...v: (number | null)[]) => new Map(v.map((x, i) => ['j' + i, x] as [string, number | null]))
-  const s = (k: number) => set(Array.from({ length: k }, (_, i) => 'j' + i))
+  const w = (...v: (number | null)[]) => weakSpots(v.map((x, i) => ri('i' + i, 10, x)))
   it('exactly 1.5 below average is flagged', () => {
-    expect(weakSpots(s(3), sc(10, 7.75, 10))).toEqual(['i1'])
+    expect(w(10, 7.75, 10)).toEqual(['i1'])
   })
   it('decimal scores exactly 1.5 below average are flagged (float epsilon)', () => {
-    expect(weakSpots(s(3), sc(6, 3.9, 6.3))).toEqual(['i1'])
+    expect(w(6, 3.9, 6.3)).toEqual(['i1'])
   })
   it('1.4 below average is not flagged', () => {
-    expect(weakSpots(s(3), sc(10, 7.85, 10))).toEqual([])
+    expect(w(10, 7.85, 10)).toEqual([])
   })
   it('first/last never flagged', () => {
-    expect(weakSpots(s(3), sc(1, 9, 9))).toEqual([])
-    expect(weakSpots(s(3), sc(9, 9, 1))).toEqual([])
+    expect(w(1, 9, 9)).toEqual([])
+    expect(w(9, 9, 1)).toEqual([])
   })
-  it('none when n<3', () => expect(weakSpots(s(2), sc(1, 9))).toEqual([]))
-  it('null score not flagged', () => expect(weakSpots(s(3), sc(9, null, 9))).toEqual([]))
+  it('none when n<3', () => expect(w(1, 9)).toEqual([]))
+  it('null score not flagged', () => expect(w(9, null, 9)).toEqual([]))
+  it('works on item scores and returns item ids', () => {
+    expect(weakSpots([ri('a', 1, 10), ri('chunk', 1, 7.75, [8, 7.5]), ri('c', 1, 10)])).toEqual(['chunk'])
+  })
 })

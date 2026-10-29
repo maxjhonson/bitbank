@@ -29,6 +29,34 @@ export interface Performance {
   updatedAt: string
 }
 
+export interface Chunk {
+  id: string
+  title: string
+  items: { jokeId: string; segue?: string }[]
+  notes: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface JokeSetItem {
+  id: string
+  kind: 'joke'
+  jokeId: string
+  role?: 'opener' | 'closer'
+  segue?: string
+}
+
+export interface ChunkSetItem {
+  id: string
+  kind: 'chunk'
+  chunkId: string
+  skippedJokeIds?: string[]
+  role?: 'opener' | 'closer'
+  segue?: string
+}
+
+export type SetItem = JokeSetItem | ChunkSetItem
+
 export interface ComedySet {
   id: string
   name: string
@@ -36,7 +64,7 @@ export interface ComedySet {
   venue?: string
   targetSec: number // e.g. 900 for 15:00
   bufferSec: number // segues and crowd work, default 60
-  items: { id: string; jokeId: string; role?: 'opener' | 'closer'; segue?: string }[]
+  items: SetItem[]
   createdAt: string
   updatedAt: string
 }

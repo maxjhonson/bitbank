@@ -22,7 +22,7 @@ async function seed(secs: number[], o: Parameters<typeof createSet>[0] = {}) {
   for (let i = 0; i < secs.length; i++) jokes.push(await createJoke({ title: `J${i + 1}`, manualTimeSec: secs[i] }))
   const set = await createSet({
     name: 'Show', targetSec: 900, bufferSec: 60,
-    items: jokes.map((j, i) => ({ id: `it${i + 1}`, jokeId: j.id })), ...o,
+    items: jokes.map((j, i) => ({ id: `it${i + 1}`, kind: 'joke', jokeId: j.id })), ...o,
   })
   return { jokes, set }
 }

@@ -39,7 +39,7 @@ describe('SetListPage', () => {
 
   it('shows total vs target per set', async () => {
     const j = await createJoke({ title: 'A', manualTimeSec: 600 })
-    await createSet({ name: 'Club', targetSec: 900, bufferSec: 60, items: [{ id: 'i1', jokeId: j.id }] })
+    await createSet({ name: 'Club', targetSec: 900, bufferSec: 60, items: [{ id: 'i1', kind: 'joke', jokeId: j.id }] })
     renderPage()
     expect(await screen.findByText('11:00 of 15:00')).toBeInTheDocument()
   })

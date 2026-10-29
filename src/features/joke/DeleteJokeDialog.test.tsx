@@ -19,7 +19,7 @@ describe('DeleteJokeDialog', () => {
     const j = await createJoke({ title: 'Bit' })
     const keep = await createJoke({ title: 'Keep' })
     await addPerformance({ jokeId: j.id, date: '2026-10-01', venue: 'X', score: 6 })
-    const s = await createSet({ name: 'Friday', items: [{ id: 'a', jokeId: j.id }, { id: 'b', jokeId: keep.id }] })
+    const s = await createSet({ name: 'Friday', items: [{ id: 'a', kind: 'joke', jokeId: j.id }, { id: 'b', kind: 'joke', jokeId: keep.id }] })
     const onDeleted = vi.fn()
     wrap(<DeleteJokeDialog jokeId={j.id} title="Bit" onClose={() => {}} onDeleted={onDeleted} />)
     expect(await screen.findByRole('dialog')).toBeInTheDocument()

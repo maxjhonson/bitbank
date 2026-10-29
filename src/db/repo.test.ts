@@ -35,8 +35,8 @@ describe('jokes', () => {
     const s = await repo.createSet()
     await repo.updateSet(s.id, {
       items: [
-        { id: 'i1', jokeId: a.id },
-        { id: 'i2', jokeId: b.id },
+        { id: 'i1', kind: 'joke', jokeId: a.id },
+        { id: 'i2', kind: 'joke', jokeId: b.id },
       ],
     })
     expect((await repo.setsUsingJoke(a.id)).map((x) => x.id)).toEqual([s.id])
@@ -45,7 +45,7 @@ describe('jokes', () => {
     const perfs = await db.performances.toArray()
     expect(perfs.map((p) => p.jokeId)).toEqual([b.id])
     const set = await db.sets.get(s.id)
-    expect(set?.items.map((i) => i.jokeId)).toEqual([b.id])
+    expect(set?.items.map((i) => (i as { jokeId: string }).jokeId)).toEqual([b.id])
   })
 })
 
@@ -60,11 +60,11 @@ describe('sets', () => {
 
   it('duplicateSet gives new ids with same jokeIds', async () => {
     const s = await repo.createSet({ name: 'Club' })
-    await repo.updateSet(s.id, { items: [{ id: 'a', jokeId: 'j1' }, { id: 'b', jokeId: 'j2', role: 'closer' }] })
+    await repo.updateSet(s.id, { items: [{ id: 'a', kind: 'joke', jokeId: 'j1' }, { id: 'b', kind: 'joke', jokeId: 'j2', role: 'closer' }] })
     const d = await repo.duplicateSet(s.id)
     expect(d.id).not.toBe(s.id)
     expect(d.name).toBe('Club (copy)')
-    expect(d.items.map((i) => i.jokeId)).toEqual(['j1', 'j2'])
+    expect(d.items.map((i) => (i as { jokeId: string }).jokeId)).toEqual(['j1', 'j2'])
     expect(d.items.map((i) => i.id)).not.toContain('a')
     expect(d.items[1].role).toBe('closer')
     await repo.deleteSet(s.id)

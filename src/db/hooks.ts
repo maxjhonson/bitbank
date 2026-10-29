@@ -1,3 +1,4 @@
+import { isChunkItem } from '../domain/chunks'
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { ComedySet, Idea, Joke, Performance, Settings } from '../domain/types'
@@ -76,7 +77,7 @@ export function useJokeStats(): Map<string, JokeStat> | undefined {
     }
     const used = new Map<string, number>()
     for (const s of sets) {
-      for (const id of new Set(s.items.map(i => i.jokeId))) used.set(id, (used.get(id) ?? 0) + 1)
+      for (const id of new Set(s.items.flatMap(i => (isChunkItem(i) ? [] : [i.jokeId])))) used.set(id, (used.get(id) ?? 0) + 1)
     }
     const out = new Map<string, JokeStat>()
     for (const joke of jokes) {

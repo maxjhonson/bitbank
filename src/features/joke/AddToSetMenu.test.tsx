@@ -37,7 +37,7 @@ describe('AddToSetMenu', () => {
     await waitFor(async () => {
       const all = await db.sets.toArray()
       expect(all).toHaveLength(1)
-      expect(all[0].items.map(i => i.jokeId)).toEqual([j.id])
+      expect(all[0].items.map(i => (i as { jokeId: string }).jokeId)).toEqual([j.id])
     })
   })
 })
@@ -45,7 +45,7 @@ describe('AddToSetMenu', () => {
 describe('UsedIn', () => {
   it('links to /sets/:id', async () => {
     const j = await createJoke({ title: 'J' })
-    const s = await createSet({ name: 'Friday', items: [{ id: 'i', jokeId: j.id }] })
+    const s = await createSet({ name: 'Friday', items: [{ id: 'i', kind: 'joke', jokeId: j.id }] })
     await createSet({ name: 'Other' })
     wrap(<UsedIn jokeId={j.id} />)
     const link = await screen.findByRole('link', { name: 'Friday' })

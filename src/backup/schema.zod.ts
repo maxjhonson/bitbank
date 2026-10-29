@@ -51,12 +51,15 @@ export const setSchema = z.object({
   targetSec: z.number().min(0),
   bufferSec: z.number().min(0),
   items: z.array(
-    z.object({
-      id,
-      jokeId: id,
-      role: z.enum(['opener', 'closer']).optional(),
-      segue: z.string().optional(),
-    }),
+    z
+      .object({
+        id,
+        kind: z.literal('joke').optional(),
+        jokeId: id,
+        role: z.enum(['opener', 'closer']).optional(),
+        segue: z.string().optional(),
+      })
+      .transform(i => ({ ...i, kind: 'joke' as const })),
   ),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,

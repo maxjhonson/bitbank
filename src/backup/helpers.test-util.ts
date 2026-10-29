@@ -23,8 +23,8 @@ export async function seed() {
   const s = await repo.createSet({ name: 'Friday', date: '2026-10-30' })
   await repo.updateSet(s.id, {
     items: [
-      { id: 'i1', jokeId: b.id, role: 'opener' },
-      { id: 'i2', jokeId: a.id, segue: 'so' },
+      { id: 'i1', kind: 'joke', jokeId: b.id, role: 'opener' },
+      { id: 'i2', kind: 'joke', jokeId: a.id, segue: 'so' },
     ],
   })
   await repo.addIdea('an idea')

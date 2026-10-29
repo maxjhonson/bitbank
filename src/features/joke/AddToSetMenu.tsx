@@ -1,3 +1,4 @@
+import { isChunkItem } from '../../domain/chunks'
 import { useState } from 'react'
 import { addJokeToSet, createSet, useSets } from '../../db'
 import { useT } from '../../i18n'
@@ -10,7 +11,7 @@ export function AddToSetMenu({ jokeId }: { jokeId: string }) {
   const [open, setOpen] = useState(false)
   const [msg, setMsg] = useState('')
   async function add(id: string, name: string) {
-    const already = sets?.find(s => s.id === id)?.items.some(i => i.jokeId === jokeId)
+    const already = sets?.find(s => s.id === id)?.items.some(i => !isChunkItem(i) && i.jokeId === jokeId)
     await addJokeToSet(id, jokeId)
     if (already) return
     setMsg(t('addToSet.added', { name }))
@@ -25,7 +26,7 @@ export function AddToSetMenu({ jokeId }: { jokeId: string }) {
       {open && (
         <ul className={styles.links}>
           {(sets ?? []).map(s => {
-            const has = s.items.some(i => i.jokeId === jokeId)
+            const has = s.items.some(i => !isChunkItem(i) && i.jokeId === jokeId)
             return (
               <li key={s.id}>
                 <Button variant="ghost" aria-label={has ? t('addToSet.inSet', { name: s.name }) : s.name} onClick={() => void add(s.id, s.name)}>

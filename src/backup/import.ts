@@ -1,3 +1,4 @@
+import { isChunkItem } from '../domain/chunks'
 import { db, normalizeTags } from '../db'
 import type { ComedySet, Idea, Joke, Performance } from '../domain/types'
 import { migrateBackup } from './migrations'
@@ -147,7 +148,7 @@ export async function applyImport(file: BackupFile, mode: 'merge' | 'replace'): 
       result.removedDangling += danglingPerfs.length
     }
     for (const s of await db.sets.toArray()) {
-      const kept = s.items.filter((i) => jokeIds.has(i.jokeId))
+      const kept = s.items.filter((i) => isChunkItem(i) || jokeIds.has(i.jokeId))
       if (kept.length !== s.items.length) {
         result.removedDangling += s.items.length - kept.length
         await db.sets.put({ ...s, items: kept })

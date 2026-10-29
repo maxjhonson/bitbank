@@ -28,7 +28,7 @@ async function seed() {
   const b = await createJoke({ title: 'Bravo', manualTimeSec: 60 })
   const set = await createSet({
     name: 'Show',
-    items: [{ id: 'i1', jokeId: a.id }, { id: 'i2', jokeId: b.id, segue: 'Speaking of birds' }],
+    items: [{ id: 'i1', kind: 'joke', jokeId: a.id }, { id: 'i2', kind: 'joke', jokeId: b.id, segue: 'Speaking of birds' }],
   })
   return { a, b, set }
 }
@@ -45,7 +45,7 @@ describe('StageModePage', () => {
 
   it('renders the segue after its joke title and falls back for untitled jokes', async () => {
     const a = await createJoke({ title: '' })
-    const set = await createSet({ name: 'S', items: [{ id: 'i1', jokeId: a.id, segue: 'bridge' }] })
+    const set = await createSet({ name: 'S', items: [{ id: 'i1', kind: 'joke', jokeId: a.id, segue: 'bridge' }] })
     renderPage(set.id)
     const title = await screen.findByTestId('stage-title')
     expect(title).toHaveTextContent('Untitled')

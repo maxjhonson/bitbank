@@ -66,7 +66,7 @@ describe('LibraryPage', () => {
   it('singular forms for 1 run and 1 set', async () => {
     const a = await createJoke({ title: 'A' })
     await addPerformance({ jokeId: a.id, date: '2026-01-01', venue: 'Club', score: 8 })
-    await createSet({ name: 'S', items: [{ id: 'i1', jokeId: a.id }] })
+    await createSet({ name: 'S', items: [{ id: 'i1', kind: 'joke', jokeId: a.id }] })
     renderPage()
     expect(await screen.findByText('1 run')).toBeInTheDocument()
     expect(screen.getByText('In 1 set')).toBeInTheDocument()

@@ -1,3 +1,4 @@
+import { isChunkItem } from '../../domain/chunks'
 import { useMemo, useState } from 'react'
 import { useT } from '../../i18n'
 import { addJokeToSet, useJokeStats } from '../../db'
@@ -14,7 +15,7 @@ export function JokeBank({ view }: { view: SetView }) {
   const { set, totals } = view
   const list = useMemo(() => {
     if (!stats) return []
-    const inSet = new Set(set.items.map(i => i.jokeId))
+    const inSet = new Set(set.items.flatMap(i => (isChunkItem(i) ? [] : [i.jokeId])))
     const q = query.trim().toLowerCase()
     return [...stats.values()]
       .filter(s => !inSet.has(s.joke.id))

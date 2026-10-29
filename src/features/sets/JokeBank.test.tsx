@@ -28,7 +28,7 @@ describe('JokeBank', () => {
     const inSet = await createJoke({ title: 'InSet', manualTimeSec: 60 })
     await createJoke({ title: 'Small', manualTimeSec: 30 })
     await createJoke({ title: 'Big', manualTimeSec: 600 })
-    const set = await createSet({ targetSec: 120, bufferSec: 0, items: [{ id: 'a', jokeId: inSet.id }] })
+    const set = await createSet({ targetSec: 120, bufferSec: 0, items: [{ id: 'a', kind: 'joke', jokeId: inSet.id }] })
     renderPage(set.id)
     await waitFor(() => expect(bank()).toEqual(['Small']))
     await userEvent.click(screen.getByLabelText('Only jokes that fit the remaining time'))
@@ -48,7 +48,7 @@ describe('JokeBank', () => {
   it('+ appends to the end and removes it from the bank', async () => {
     const a = await createJoke({ title: 'A', manualTimeSec: 30 })
     await createJoke({ title: 'B', manualTimeSec: 30 })
-    const set = await createSet({ targetSec: 900, items: [{ id: 'x', jokeId: a.id }] })
+    const set = await createSet({ targetSec: 900, items: [{ id: 'x', kind: 'joke', jokeId: a.id }] })
     renderPage(set.id)
     await userEvent.click(await screen.findByRole('button', { name: 'Add B to set' }))
     await waitFor(async () => {

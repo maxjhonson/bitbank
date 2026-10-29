@@ -14,11 +14,11 @@ describe('atomic updates', () => {
 
   it('concurrent updateSetItems (segue + remove on another row) keeps both', async () => {
     const a = await createJoke(); const b = await createJoke()
-    const s = await createSet({ items: [{ id: 'i1', jokeId: a.id }, { id: 'i2', jokeId: b.id }] })
+    const s = await createSet({ items: [{ id: 'i1', kind: 'joke', jokeId: a.id }, { id: 'i2', kind: 'joke', jokeId: b.id }] })
     await Promise.all([
       updateSetItems(s.id, items => items.map(i => (i.id === 'i1' ? { ...i, segue: 'so' } : i))),
       updateSetItems(s.id, items => items.filter(i => i.id !== 'i2')),
     ])
-    expect((await db.sets.get(s.id))!.items).toEqual([{ id: 'i1', jokeId: a.id, segue: 'so' }])
+    expect((await db.sets.get(s.id))!.items).toEqual([{ id: 'i1', kind: 'joke', jokeId: a.id, segue: 'so' }])
   })
 })

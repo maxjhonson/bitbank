@@ -54,7 +54,7 @@ beforeEach(async () => {
   const s = await createSet({ name: 'Friday' })
   setId = s.id
   const { updateSet } = await import('../db')
-  await updateSet(s.id, { items: [{ id: 'i1', jokeId }] })
+  await updateSet(s.id, { items: [{ id: 'i1', kind: 'joke', jokeId }] })
   await addIdea('an idea')
 })
 
