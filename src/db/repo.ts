@@ -84,7 +84,25 @@ export function getChunk(id: string): Promise<Chunk | undefined> {
 }
 
 export async function updateChunk(id: string, patch: Partial<Chunk>): Promise<void> {
-  await db.chunks.update(id, { ...patch, updatedAt: now() })
+  await db.transaction('rw', db.chunks, db.sets, async () => {
+    const ts = now()
+    await db.chunks.update(id, { ...patch, updatedAt: ts })
+    if (!patch.items) return
+    // Drop skip ids for jokes no longer in the chunk, so a re-added joke comes back ticked.
+    const inChunk = new Set(patch.items.map((i) => i.jokeId))
+    for (const s of await db.sets.toArray()) {
+      let changed = false
+      const items = s.items.map((i) => {
+        if (!isChunkItem(i) || i.chunkId !== id || !i.skippedJokeIds) return i
+        const kept = i.skippedJokeIds.filter((j) => inChunk.has(j))
+        if (kept.length === i.skippedJokeIds.length) return i
+        changed = true
+        const { skippedJokeIds: _old, ...rest } = i
+        return kept.length ? { ...rest, skippedJokeIds: kept } : rest
+      })
+      if (changed) await db.sets.update(s.id, { items, updatedAt: ts })
+    }
+  })
 }
 
 export async function deleteChunk(id: string): Promise<void> {

@@ -77,27 +77,51 @@ describe('chunks repo', () => {
     expect(items[0]).toMatchObject({ kind: 'chunk', chunkId: c.id })
   })
 
-  it('setChunkJokeSkipped toggles, and prunes stale ids', async () => {
+  it('setChunkJokeSkipped toggles on and off', async () => {
     const c = await repo.createChunk({ items: [{ jokeId: 'a' }, { jokeId: 'b' }] })
     const s = await setWith([{ id: 'i', kind: 'chunk', chunkId: c.id }])
-    const skips = async () => ((await db.sets.get(s.id))!.items[0] as ChunkSetItem).skippedJokeIds ?? []
+    const item = async () => (await db.sets.get(s.id))!.items[0] as ChunkSetItem
     await repo.setChunkJokeSkipped(s.id, 'i', 'a', true)
-    expect(await skips()).toEqual(['a'])
     await repo.setChunkJokeSkipped(s.id, 'i', 'a', true)
-    expect(await skips()).toEqual(['a'])
-    // reorder keeps the skip
-    await repo.updateChunk(c.id, { items: [{ jokeId: 'b' }, { jokeId: 'a' }] })
+    expect((await item()).skippedJokeIds).toEqual(['a'])
+    await repo.setChunkJokeSkipped(s.id, 'i', 'b', true)
+    expect((await item()).skippedJokeIds).toEqual(['a', 'b'])
+    await repo.setChunkJokeSkipped(s.id, 'i', 'a', false)
     await repo.setChunkJokeSkipped(s.id, 'i', 'b', false)
-    expect(await skips()).toEqual(['a'])
+    expect((await item()).skippedJokeIds).toBeUndefined()
+  })
+
+  it('updateChunk prunes stale skips from sets, so remove then re-add resets to ticked', async () => {
+    const c = await repo.createChunk({ items: [{ jokeId: 'a' }, { jokeId: 'b' }] })
+    const s = await setWith([{ id: 'i', kind: 'chunk', chunkId: c.id }])
+    const other = await setWith([{ id: 'x', kind: 'joke', jokeId: 'a' }])
+    const item = async () => (await db.sets.get(s.id))!.items[0] as ChunkSetItem
+    await repo.setChunkJokeSkipped(s.id, 'i', 'a', true)
+    await repo.setChunkJokeSkipped(s.id, 'i', 'b', true)
+    const otherBefore = (await db.sets.get(other.id))!.updatedAt
+    // reorder keeps skips on jokes that stay
+    await repo.updateChunk(c.id, { items: [{ jokeId: 'b' }, { jokeId: 'a' }] })
+    expect((await item()).skippedJokeIds).toEqual(['a', 'b'])
     // a joke appended to the chunk is not skipped
     await repo.updateChunk(c.id, { items: [{ jokeId: 'b' }, { jokeId: 'a' }, { jokeId: 'n' }] })
-    await repo.setChunkJokeSkipped(s.id, 'i', 'b', false)
-    expect(await skips()).toEqual(['a'])
-    // remove then re-add: the stale skip is pruned by the next call, so it resets
+    expect((await item()).skippedJokeIds).toEqual(['a', 'b'])
+    // remove 'a': its skip is pruned immediately, 'b' keeps its skip
     await repo.updateChunk(c.id, { items: [{ jokeId: 'b' }] })
+    expect((await item()).skippedJokeIds).toEqual(['b'])
+    // re-add 'a': it comes back ticked
     await repo.updateChunk(c.id, { items: [{ jokeId: 'b' }, { jokeId: 'a' }] })
-    await repo.setChunkJokeSkipped(s.id, 'i', 'a', false)
-    expect(await skips()).toEqual([])
+    expect((await item()).skippedJokeIds).toEqual(['b'])
+    // removing every skipped joke omits the field
+    await repo.updateChunk(c.id, { items: [{ jokeId: 'a' }] })
+    expect((await item()).skippedJokeIds).toBeUndefined()
+    expect((await db.sets.get(other.id))!.updatedAt).toBe(otherBefore)
+  })
+
+  it('updateChunk bumps updatedAt', async () => {
+    const c = await repo.createChunk()
+    await new Promise((r) => setTimeout(r, 5))
+    await repo.updateChunk(c.id, { title: 'T' })
+    expect((await repo.getChunk(c.id))!.updatedAt > c.updatedAt).toBe(true)
   })
 
   it('breakApartChunk replaces the item in place with joke items for ticked jokes and skips ones already in the set', async () => {
