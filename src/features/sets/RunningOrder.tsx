@@ -18,7 +18,7 @@ function Row({ row, index, view }: { row: SetRow; index: number; view: SetView }
   const t = useT()
   const { set } = view
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: row.itemId })
-  const title = row.joke.title || t('lib.untitled')
+  const title = (row.kind === 'chunk' ? row.chunk.title : row.joke.title) || t('lib.untitled')
   const patchItem = (patch: { role?: 'opener' | 'closer'; segue?: string }) =>
     void updateSetItems(set.id, items => items.map(i => (i.id === row.itemId ? ({ ...i, ...patch } as SetItem) : i)))
   return (
@@ -34,9 +34,15 @@ function Row({ row, index, view }: { row: SetRow; index: number; view: SetView }
         </button>
         <span className={`${styles.slot} mono`}>{row.slot}</span>
         <div className={styles.itemBody}>
-          <Link to={`/jokes/${row.joke.id}`} className={styles.itemTitle} data-testid="row-title">{title}</Link>
-          {row.joke.tags.length > 0 && (
-            <span className={styles.tags}>{row.joke.tags.map(tag => <Tag key={tag}>{tag}</Tag>)}</span>
+          {row.kind === 'chunk' ? (
+            <span className={styles.itemTitle} data-testid="row-title">{title}</span>
+          ) : (
+            <>
+              <Link to={`/jokes/${row.joke.id}`} className={styles.itemTitle} data-testid="row-title">{title}</Link>
+              {row.joke.tags.length > 0 && (
+                <span className={styles.tags}>{row.joke.tags.map(tag => <Tag key={tag}>{tag}</Tag>)}</span>
+              )}
+            </>
           )}
         </div>
         {row.role && (

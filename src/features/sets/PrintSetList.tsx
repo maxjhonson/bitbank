@@ -8,7 +8,7 @@ export function PrintSetList({ view }: { view: SetView }) {
     <section className="print-only">
       <h1 className="print-set-name">{view.set.name}</h1>
       <ol className="print-list">
-        {view.rows.map(r => <li key={r.itemId}>{r.joke.title || t('lib.untitled')}</li>)}
+        {view.rows.map(r => <li key={r.itemId}>{(r.kind === 'chunk' ? r.chunk.title : r.joke.title) || t('lib.untitled')}</li>)}
       </ol>
     </section>
   )

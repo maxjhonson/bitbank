@@ -1,17 +1,18 @@
 import { Link } from 'react-router-dom'
 import { useT } from '../../i18n'
-import { createSet, duplicateSet, deleteSet, updateSet, useJokeStats, useSets } from '../../db'
-import { setTotals, type ResolvedItem } from '../../domain/derive'
-import { isChunkItem } from '../../domain/chunks'
+import { createSet, duplicateSet, deleteSet, updateSet, useChunks, useJokeStats, useSets } from '../../db'
+import { setTotals } from '../../domain/derive'
 import { formatMmSs } from '../../domain/time'
 import { Button } from '../../ui/Button/Button'
 import { CommitField } from './CommitField'
+import { resolveSetItems } from './useSetView'
 import styles from './Sets.module.css'
 
 export function SetListPage() {
   const t = useT()
   const sets = useSets()
   const stats = useJokeStats()
+  const chunks = useChunks()
   const sorted = [...(sets ?? [])].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 
   return (
@@ -28,12 +29,7 @@ export function SetListPage() {
       )}
       <ul className={styles.list}>
         {sorted.map(s => {
-          const resolved: ResolvedItem[] = []
-          for (const i of s.items) {
-            if (isChunkItem(i)) continue
-            const st = stats?.get(i.jokeId)
-            if (st) resolved.push({ itemId: i.id, sec: st.sec, score: st.score, jokeScores: [st.score] })
-          }
+          const resolved = stats && chunks ? resolveSetItems(s, stats, chunks).resolved : []
           const totals = setTotals(s, resolved)
           return (
             <li key={s.id} className={styles.listRow}>

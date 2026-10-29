@@ -75,18 +75,28 @@ export function useJokeStats(): Map<string, JokeStat> | undefined {
   const jokes = useJokes()
   const perfs = usePerformances()
   const sets = useSets()
+  const chunks = useChunks()
   const { wordsPerMinute } = useSettings()
   return useMemo(() => {
-    if (!jokes || !perfs || !sets) return undefined
+    if (!jokes || !perfs || !sets || !chunks) return undefined
     const byJoke = new Map<string, Performance[]>()
     for (const p of perfs) {
       const list = byJoke.get(p.jokeId)
       if (list) list.push(p)
       else byJoke.set(p.jokeId, [p])
     }
+    const chunkById = new Map(chunks.map(c => [c.id, c]))
     const used = new Map<string, number>()
     for (const s of sets) {
-      for (const id of new Set(s.items.flatMap(i => (isChunkItem(i) ? [] : [i.jokeId])))) used.set(id, (used.get(id) ?? 0) + 1)
+      const ids = new Set<string>()
+      for (const i of s.items) {
+        if (!isChunkItem(i)) ids.add(i.jokeId)
+        else {
+          const skip = new Set(i.skippedJokeIds ?? [])
+          for (const ci of chunkById.get(i.chunkId)?.items ?? []) if (!skip.has(ci.jokeId)) ids.add(ci.jokeId)
+        }
+      }
+      for (const id of ids) used.set(id, (used.get(id) ?? 0) + 1)
     }
     const out = new Map<string, JokeStat>()
     for (const joke of jokes) {
@@ -104,5 +114,5 @@ export function useJokeStats(): Map<string, JokeStat> | undefined {
       })
     }
     return out
-  }, [jokes, perfs, sets, wordsPerMinute])
+  }, [jokes, perfs, sets, chunks, wordsPerMinute])
 }
