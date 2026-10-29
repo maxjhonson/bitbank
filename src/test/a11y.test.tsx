@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { App } from '../App'
-import { createJoke, createSet, db, addIdea, addPerformance } from '../db'
+import { createChunk, createJoke, createSet, db, addIdea, addPerformance } from '../db'
 import { I18nProvider } from '../i18n'
 import { ToastProvider } from '../ui/Toast/Toast'
 
@@ -46,6 +46,7 @@ async function renderAt(url: string) {
 
 let jokeId = ''
 let setId = ''
+let chunkId = ''
 beforeEach(async () => {
   await Promise.all(db.tables.map(t => t.clear()))
   const j = await createJoke({ title: 'Airports', setup: 'one two three', punchline: 'boom', tags: ['travel'] })
@@ -54,7 +55,10 @@ beforeEach(async () => {
   const s = await createSet({ name: 'Friday' })
   setId = s.id
   const { updateSet } = await import('../db')
-  await updateSet(s.id, { items: [{ id: 'i1', kind: 'joke', jokeId }] })
+  const j2 = await createJoke({ title: 'Layovers', setup: 'four five', punchline: 'zap', tags: ['travel'] })
+  const c = await createChunk({ title: 'Travel bits', items: [{ jokeId, segue: 'Speaking of flying' }, { jokeId: j2.id }] })
+  chunkId = c.id
+  await updateSet(s.id, { items: [{ id: 'i1', kind: 'joke', jokeId }, { id: 'i2', kind: 'chunk', chunkId }] })
   await addIdea('an idea')
 })
 
@@ -68,9 +72,11 @@ describe('accessibility: every route', () => {
     [`/sets/${setId}/stage`, () => screen.findAllByText('Airports')],
     ['/notebook', () => screen.findAllByText('an idea')],
     ['/settings', () => screen.findByRole('heading', { name: 'Settings' })],
+    ['/?view=chunks', () => screen.findByText('Travel bits')],
+    [`/chunks/${chunkId}`, () => screen.findByDisplayValue('Travel bits')],
     ['/nope', () => screen.findByRole('heading', { name: 'Page not found' })],
   ]
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 10; i++) {
     it(`route #${i} renders seeded content; buttons, links, fields are named`, async () => {
       const [url, marker] = routes()[i]
       const { container } = await renderAt(url)
@@ -83,4 +89,19 @@ describe('accessibility: every route', () => {
       }
     })
   }
+})
+
+describe('accessibility: chunk card', () => {
+  it('expanded chunk card in the set builder: controls are named', async () => {
+    const { container } = await renderAt(`/sets/${setId}`)
+    fireEvent.click(await screen.findByRole('button', { name: /expand/i }))
+    await screen.findByRole('checkbox', { name: 'Layovers' })
+    expect(container.querySelector('[aria-expanded="true"]')).not.toBeNull()
+    for (const el of container.querySelectorAll('button, a[href]')) {
+      expect(accessibleName(el), el.outerHTML.slice(0, 120)).not.toBe('')
+    }
+    for (const el of container.querySelectorAll('input:not([type=hidden]), textarea, select')) {
+      expect(hasLabel(el), el.outerHTML.slice(0, 120)).toBe(true)
+    }
+  })
 })
