@@ -299,6 +299,19 @@ describe('SetBuilderPage', () => {
       await waitFor(() => expect(screen.getByRole('button', { name: 'Break apart' })).toBeDisabled())
     })
 
+    it('Break apart is disabled when every ticked joke is already a standalone item in the set', async () => {
+      const { set, jokes } = await seedChunk()
+      await db.sets.update(set.id, {
+        items: [
+          ...(await storedItems(set.id)),
+          ...jokes.map((j, i) => ({ id: `s${i}`, kind: 'joke' as const, jokeId: j.id })),
+        ],
+      })
+      renderPage(set.id)
+      await userEvent.click(await screen.findByRole('button', { name: /Expand Bit/ }))
+      expect(screen.getByRole('button', { name: 'Break apart' })).toBeDisabled()
+    })
+
     it('reordering a chunk card by keyboard moves it as a block', async () => {
       vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
         const idx = Number(this.closest('[data-row-index]')?.getAttribute('data-row-index') ?? -1)

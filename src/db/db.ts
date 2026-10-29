@@ -1,9 +1,19 @@
-import Dexie, { type Table } from 'dexie'
+import Dexie, { type Table, type Transaction } from 'dexie'
 import { withItemKinds } from '../domain/chunks'
 import type { Chunk, ComedySet, Idea, Joke, Performance, Settings } from '../domain/types'
 import { SCHEMA_V1, SCHEMA_V2 } from './schema'
 
 export const DEFAULT_SETTINGS: Settings = { id: 'settings', wordsPerMinute: 150, backupReminderDays: 7 }
+
+/** Dexie v1 -> v2: legacy set items get `kind: 'joke'`. */
+export function upgradeToV2(tx: Transaction): PromiseLike<unknown> {
+  return tx
+    .table('sets')
+    .toCollection()
+    .modify((set: { items?: unknown[] }) => {
+      set.items = withItemKinds(set.items ?? [])
+    })
+}
 
 class BitBankDB extends Dexie {
   jokes!: Table<Joke, string>
@@ -16,16 +26,7 @@ class BitBankDB extends Dexie {
   constructor() {
     super('bitbank')
     this.version(1).stores(SCHEMA_V1)
-    this.version(2)
-      .stores(SCHEMA_V2)
-      .upgrade((tx) =>
-        tx
-          .table('sets')
-          .toCollection()
-          .modify((set: { items?: unknown[] }) => {
-            set.items = withItemKinds(set.items ?? [])
-          }),
-      )
+    this.version(2).stores(SCHEMA_V2).upgrade(upgradeToV2)
   }
 }
 

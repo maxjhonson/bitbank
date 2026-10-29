@@ -51,4 +51,13 @@ describe('daysSince / getLastChangeAt', () => {
     expect(await getLastChangeAt()).toBe(i.updatedAt)
     expect(i.updatedAt > j.updatedAt).toBe(true)
   })
+  it('a chunk updated after lastExportAt makes the reminder show', async () => {
+    const lastExportAt = new Date(Date.now() - 12 * D).toISOString()
+    const c = await repo.createChunk({ title: 'Combo' })
+    expect(await getLastChangeAt()).toBe(c.updatedAt)
+    expect(
+      shouldShowBackupReminder({ reminderDays: 7, now: new Date(), lastExportAt: lastExportAt, lastChangeAt: await getLastChangeAt() }),
+    ).toBe(true)
+  })
+
 })

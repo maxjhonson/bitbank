@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../../i18n'
 import { breakApartChunk, setChunkJokeSkipped, updateSetItems } from '../../db'
+import { isChunkItem } from '../../domain/chunks'
 import { formatMmSs } from '../../domain/time'
 import { Tag } from '../../ui/Tag/Tag'
 import { CommitField } from './CommitField'
@@ -15,8 +16,9 @@ import { moveItem } from './reorder'
 import type { ChunkRow, SetRow, SetView } from './useSetView'
 import styles from './Sets.module.css'
 
-function ChunkEntries({ row, setId, title }: { row: ChunkRow; setId: string; title: string }) {
+function ChunkEntries({ row, setId, title, standalone }: { row: ChunkRow; setId: string; title: string; standalone: Set<string> }) {
   const t = useT()
+  const nothingToCopy = !row.entries.some(e => e.ticked && !standalone.has(e.jokeId))
   return (
     <div className={styles.chunkBody}>
       <ul className={styles.entries} aria-label={t('set.chunk.jokes', { title })}>
@@ -43,7 +45,7 @@ function ChunkEntries({ row, setId, title }: { row: ChunkRow; setId: string; tit
       <button
         type="button"
         className={styles.breakApart}
-        disabled={row.tickedCount === 0}
+        disabled={row.tickedCount === 0 || nothingToCopy}
         onClick={() => void breakApartChunk(setId, row.itemId)}
       >
         {t('set.chunk.breakApart')}
@@ -126,7 +128,7 @@ function Row({ row, index, view }: { row: SetRow; index: number; view: SetView }
         placeholder={t('set.segue')}
         onCommit={v => patchItem({ segue: v || undefined })}
       />
-      {row.kind === 'chunk' && open && <ChunkEntries row={row} setId={set.id} title={title} />}
+      {row.kind === 'chunk' && open && <ChunkEntries row={row} setId={set.id} title={title} standalone={new Set(set.items.flatMap(i => (isChunkItem(i) ? [] : [i.jokeId])))} />}
     </li>
   )
 }

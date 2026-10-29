@@ -164,6 +164,20 @@ describe('chunks repo', () => {
     expect(items[3].id).toBe('last')
   })
 
+  it('breakApartChunk is a no-op when every ticked joke is already standalone in the set', async () => {
+    const [a, b] = await Promise.all(['a', 'b'].map((t) => repo.createJoke({ title: t })))
+    const ch = await repo.createChunk({ items: [{ jokeId: a.id }, { jokeId: b.id }] })
+    const s = await setWith([
+      { id: 'ja', kind: 'joke', jokeId: a.id },
+      { id: 'ch', kind: 'chunk', chunkId: ch.id, skippedJokeIds: [b.id], role: 'opener', segue: 'S' },
+    ])
+    const before = (await db.sets.get(s.id))!
+    await repo.breakApartChunk(s.id, 'ch')
+    const after = (await db.sets.get(s.id))!
+    expect(after.items).toEqual(before.items)
+    expect(after.updatedAt).toBe(before.updatedAt)
+  })
+
   it('duplicateSet keeps chunk items linked with their skips and gives new item ids', async () => {
     const c = await repo.createChunk({ items: [{ jokeId: 'a' }] })
     const s = await setWith([{ id: 'i', kind: 'chunk', chunkId: c.id, skippedJokeIds: ['a'] }])

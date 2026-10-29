@@ -69,5 +69,8 @@ export function breakApart(
 
 /** Adds `kind: 'joke'` to legacy set items that lack a kind (Dexie v2 upgrade, backup migration). */
 export function withItemKinds(items: unknown[]): SetItem[] {
-  return items.map(i => ((i as { kind?: string }).kind ? i : { ...(i as object), kind: 'joke' }) as SetItem)
+  return items.map(i => {
+    if (typeof i !== 'object' || i === null) return i as SetItem // leave for zod to report
+    return ((i as { kind?: string }).kind ? i : { ...i, kind: 'joke' }) as SetItem
+  })
 }

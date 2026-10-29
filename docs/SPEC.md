@@ -152,7 +152,7 @@ db.version(2).stores({ /* v1 stores */ chunks: 'id, updatedAt' });
 | Used in | Sets whose items contain the joke id directly, chunks that contain it, and sets that use it through a chunk |
 | Set total | Sum of item times (a chunk item counts its ticked jokes) + `bufferSec` |
 | Set average score | Mean of scored jokes in the set; each ticked joke of a chunk counts individually |
-| Weak spot | A scored joke, or a chunk with a score, in a middle slot whose score is 1.5 or more below the set average |
+| Weak spot | A scored joke, or a chunk with a score, in a middle slot whose score is 1.5 or more below the mean of the item scores (each chunk counts once, as one item) |
 
 Deleting a joke that sets use must show which sets will lose it and require confirmation. Deleting a joke also deletes its performances. Deleting a joke that belongs to a chunk is blocked (see Chunks).
 

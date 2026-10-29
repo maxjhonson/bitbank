@@ -1,4 +1,4 @@
-import { isChunkItem } from '../domain/chunks'
+import { isChunkItem, resolveChunk } from '../domain/chunks'
 import { db, updateSettings } from '../db'
 import { jokeScore, jokeTime } from '../domain/derive'
 import { formatMmSs } from '../domain/time'
@@ -114,12 +114,13 @@ export async function exportMarkdown(): Promise<string> {
         n += 1
         const role = item.role ? ` [${item.role}]` : ''
         out.push(`${n}. ${c.title.trim() || 'Untitled chunk'}${role}`)
-        if (item.segue) out.push(`   - Segue: ${item.segue}`)
-        const skip = new Set(item.skippedJokeIds ?? [])
-        for (const ci of c.items) {
-          const cj = jokeById.get(ci.jokeId)
-          if (cj && !skip.has(ci.jokeId)) out.push(`   - ${titleOf(cj)}`)
+        const nums = new Map(jokes.map((j) => [j.id, { sec: 0, score: null }]))
+        for (const e of resolveChunk(c, item.skippedJokeIds, nums).entries) {
+          if (!e.ticked) continue
+          out.push(`   - ${titleOf(jokeById.get(e.jokeId)!)}`)
+          if (e.spokenSegue) out.push(`     - Segue: ${e.spokenSegue}`)
         }
+        if (item.segue) out.push(`   - Segue: ${item.segue}`)
         continue
       }
       const j = jokeById.get(item.jokeId)

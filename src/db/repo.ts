@@ -191,6 +191,7 @@ export async function breakApartChunk(setId: string, itemId: string): Promise<vo
     const { entries } = resolveChunk(chunk, item.skippedJokeIds, nums)
     const inSet = new Set(set.items.flatMap((i) => (isChunkItem(i) ? [] : [i.jokeId])))
     const jokes = breakApart(item, entries, inSet, newId)
+    if (jokes.length === 0) return // nothing to copy: keep the card (and its role/segue)
     await db.sets.update(setId, {
       items: [...set.items.slice(0, idx), ...jokes, ...set.items.slice(idx + 1)],
       updatedAt: now(),

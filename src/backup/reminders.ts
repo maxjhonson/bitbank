@@ -24,10 +24,10 @@ export function shouldShowBackupReminder(a: {
   return stale && changed
 }
 
-/** Max updatedAt across jokes, performances, sets and ideas. */
+/** Max updatedAt across jokes, performances, sets, ideas and chunks. */
 export async function getLastChangeAt(): Promise<string | undefined> {
   let max: string | undefined
-  for (const t of [db.jokes, db.performances, db.sets, db.ideas]) {
+  for (const t of [db.jokes, db.performances, db.sets, db.ideas, db.chunks]) {
     for (const r of (await t.toArray()) as { updatedAt: string }[]) {
       if (!max || Date.parse(r.updatedAt) > Date.parse(max)) max = r.updatedAt
     }

@@ -110,6 +110,27 @@ describe('chunks backup', () => {
     expect(md).not.toMatch(/- Beta/)
   })
 
+  it('a v1 file with a null set item returns a parse error instead of throwing', () => {
+    const p = parseBackup(v1([null]))
+    expect(p.ok).toBe(false)
+    if (!p.ok) expect(p.errors.length).toBeGreaterThan(0)
+  })
+
+  it('markdown export lists ticked jokes with their spoken segues, then the chunk own segue last', async () => {
+    const [a, b, c2, d] = await Promise.all(['Alpha', 'Beta', 'Gamma', 'Delta'].map((t) => repo.createJoke({ title: t })))
+    const c = await repo.createChunk({
+      title: 'Combo',
+      items: [{ jokeId: a.id, segue: 'so' }, { jokeId: b.id, segue: 'skipped-one' }, { jokeId: c2.id, segue: 'lastseg' }, { jokeId: d.id }],
+    })
+    const s = await repo.createSet({ name: 'Night' })
+    await repo.updateSet(s.id, {
+      items: [{ id: 'ci', kind: 'chunk', chunkId: c.id, skippedJokeIds: [b.id, d.id], role: 'closer', segue: 'outer' }],
+    })
+    const md = await exportMarkdown()
+    expect(md).toContain(['1. Combo [closer]', '   - Alpha', '     - Segue: so', '   - Gamma', '   - Segue: outer'].join('\n'))
+    expect(md).not.toMatch(/skipped-one|lastseg/)
+  })
+
   it('a v2 file with schemaVersion 3 is still rejected as newer', () => {
     const p = parseBackup(v1([], { chunks: [] }, 3))
     expect(p.ok).toBe(false)
