@@ -3,6 +3,7 @@ import { AppShell } from './features/shell/AppShell'
 import { NotFoundPage } from './features/NotFoundPage'
 import { LibraryPage } from './features/library/LibraryPage'
 import { JokeEditorPage } from './features/joke/JokeEditorPage'
+import { ChunkEditorPage } from './features/chunks/ChunkEditorPage'
 import { SetListPage } from './features/sets/SetListPage'
 import { SetBuilderPage } from './features/sets/SetBuilderPage'
 import { StageModePage } from './features/sets/StageModePage'
@@ -16,6 +17,7 @@ export function App() {
       <Route element={<AppShell />}>
         <Route path="/" element={<LibraryPage />} />
         <Route path="/jokes/:id" element={<JokeEditorPage />} />
+        <Route path="/chunks/:id" element={<ChunkEditorPage />} />
         <Route path="/sets" element={<SetListPage />} />
         <Route path="/sets/:id" element={<SetBuilderPage />} />
         <Route path="/notebook" element={<NotebookPage />} />

@@ -5,6 +5,8 @@ import type { JokeStatus } from '../../domain/types'
 import { formatMmSs } from '../../domain/time'
 import { useT } from '../../i18n'
 import { Button } from '../../ui/Button/Button'
+import { ChunkListView } from '../chunks/ChunkListView'
+import chunkStyles from '../chunks/Chunks.module.css'
 import { Filters } from './Filters'
 import { JokeCard } from './JokeCard'
 import { filterAndSortJokes, type LibraryQuery } from './filterJokes'
@@ -52,8 +54,36 @@ export function LibraryPage() {
     navigate(`/jokes/${joke.id}`, { state: { focusTitle: true } })
   }
 
+  const view = params.get('view') === 'chunks' ? 'chunks' : 'jokes'
+  const tabs = (
+    <div role="tablist" aria-label={t('lib.tabs')} className={chunkStyles.tabs}>
+      {(['jokes', 'chunks'] as const).map(v => (
+        <button
+          key={v}
+          type="button"
+          role="tab"
+          aria-selected={view === v}
+          className={`${chunkStyles.tab} ${view === v ? chunkStyles.tabActive : ''}`}
+          onClick={() => setParams(v === 'chunks' ? { view: 'chunks' } : {})}
+        >
+          {t(v === 'chunks' ? 'lib.tab.chunks' : 'lib.tab.jokes')}
+        </button>
+      ))}
+    </div>
+  )
+  if (view === 'chunks') {
+    return (
+      <section>
+        <h1 className={styles.h1}>{t('page.library')}</h1>
+        {tabs}
+        <ChunkListView />
+      </section>
+    )
+  }
+
   return (
     <section>
+      {tabs}
       <header className={styles.header}>
         <div>
           <h1 className={styles.h1}>{t('page.library')}</h1>
