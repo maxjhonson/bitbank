@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useT } from '../../i18n'
 import { formatMmSs } from '../../domain/time'
 import { useSetView } from './useSetView'
+import { stageLines } from './stageLines'
 import { useWakeLock } from './useWakeLock'
 import styles from './StageMode.module.css'
 
@@ -40,6 +41,7 @@ export function StageModePage() {
       </div>
     )
   }
+  const lines = stageLines(view.rows)
   return (
     <div className={styles.stage}>
       <header className={styles.bar}>
@@ -49,14 +51,15 @@ export function StageModePage() {
           {running ? t('stage.pause') : t('stage.start')}
         </button>
       </header>
-      {view.rows.length === 0 ? (
+      {lines.length === 0 ? (
         <p className={styles.notice}>{t('set.emptyOrder')}</p>
       ) : (
         <ol className={styles.list}>
-          {view.rows.map(r => (
-            <li key={r.itemId}>
-              <p className={styles.title} data-testid="stage-title">{(r.kind === 'chunk' ? r.chunk.title : r.joke.title) || t('lib.untitled')}</p>
-              {r.segue && <p className={styles.segue}>{r.segue}</p>}
+          {lines.map(l => (
+            <li key={l.key}>
+              {l.chunkStart && <p className={styles.chunkLabel}>{l.chunkTitle || t('lib.untitled')}</p>}
+              <p className={styles.title} data-testid="stage-title">{l.title || t('lib.untitled')}</p>
+              {l.segue && <p className={styles.segue}>{l.segue}</p>}
             </li>
           ))}
         </ol>

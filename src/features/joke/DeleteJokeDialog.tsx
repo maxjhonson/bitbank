@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { deleteJoke, setsUsingJoke } from '../../db'
-import type { ComedySet } from '../../domain/types'
+import { Link } from 'react-router-dom'
+import { chunksUsingJoke, deleteJoke, JokeInChunkError, setsUsingJoke } from '../../db'
+import type { Chunk, ComedySet } from '../../domain/types'
 import { useT } from '../../i18n'
 import { Button } from '../../ui/Button/Button'
 import styles from './DeleteJokeDialog.module.css'
@@ -15,6 +16,7 @@ interface Props {
 export function DeleteJokeDialog({ jokeId, title, onClose, onDeleted }: Props) {
   const t = useT()
   const [sets, setSets] = useState<ComedySet[] | null>(null)
+  const [blocking, setBlocking] = useState<Chunk[]>([])
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -28,8 +30,15 @@ export function DeleteJokeDialog({ jokeId, title, onClose, onDeleted }: Props) {
     }
   }, [])
   useEffect(() => {
+    if (blocking.length > 0) dialogRef.current?.querySelector<HTMLElement>('button')?.focus()
+  }, [blocking])
+  useEffect(() => {
     let live = true
-    void setsUsingJoke(jokeId).then(s => live && setSets(s))
+    void Promise.all([setsUsingJoke(jokeId), chunksUsingJoke(jokeId)]).then(([s, c]) => {
+      if (!live) return
+      setBlocking(c)
+      setSets(s)
+    })
     return () => { live = false }
   }, [jokeId])
   useEffect(() => {
@@ -43,10 +52,11 @@ export function DeleteJokeDialog({ jokeId, title, onClose, onDeleted }: Props) {
     setFailed(false)
     try {
       await deleteJoke(jokeId)
-    } catch {
+    } catch (e) {
       busyRef.current = false
       setBusy(false)
-      setFailed(true)
+      if (e instanceof JokeInChunkError) setBlocking(e.chunks)
+      else setFailed(true)
       return
     }
     onDeleted()
@@ -71,18 +81,30 @@ export function DeleteJokeDialog({ jokeId, title, onClose, onDeleted }: Props) {
       <div ref={dialogRef} onKeyDown={trapTab} role="dialog" aria-modal="true" aria-labelledby="del-joke-title" className={styles.dialog}>
         <h2 id="del-joke-title" className={styles.title}>{t('joke.deleteTitle')}</h2>
         <p><strong>{title || t('lib.untitled')}</strong></p>
-        <p>{t('joke.deleteBody')}</p>
-        {sets && sets.length > 0 && (
-          <div data-testid="affected-sets">
-            <p>{t('joke.deleteSets')}</p>
-            <ul>{sets.map(s => <li key={s.id}>{s.name}</li>)}</ul>
-          </div>
+        {blocking.length > 0 ? (
+          <>
+            <p>{t('joke.deleteInChunks')}</p>
+            <ul>{blocking.map(c => <li key={c.id}><Link to={`/chunks/${c.id}`}>{c.title || t('lib.untitled')}</Link></li>)}</ul>
+            <div className={styles.actions}>
+              <Button variant="ghost" onClick={onClose}>{t('common.close')}</Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p>{t('joke.deleteBody')}</p>
+            {sets && sets.length > 0 && (
+              <div data-testid="affected-sets">
+                <p>{t('joke.deleteSets')}</p>
+                <ul>{sets.map(s => <li key={s.id}>{s.name}</li>)}</ul>
+              </div>
+            )}
+            {failed && <p role="alert">{t('joke.deleteFailed')}</p>}
+            <div className={styles.actions}>
+              <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
+              <Button variant="danger" disabled={sets === null || busy} onClick={() => void confirm()}>{t('joke.delete')}</Button>
+            </div>
+          </>
         )}
-        {failed && <p role="alert">{t('joke.deleteFailed')}</p>}
-        <div className={styles.actions}>
-          <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-          <Button variant="danger" disabled={sets === null || busy} onClick={() => void confirm()}>{t('joke.delete')}</Button>
-        </div>
       </div>
     </div>
   )

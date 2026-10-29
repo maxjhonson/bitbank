@@ -3,13 +3,13 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { addPerformance, createJoke, createSet, db } from '../../db'
+import { addPerformance, createChunk, createJoke, createSet, db } from '../../db'
 import { I18nProvider } from '../../i18n'
 import { DeleteJokeDialog } from './DeleteJokeDialog'
 
 beforeEach(async () => {
   localStorage.setItem('bitbank.lang', 'en')
-  await Promise.all([db.jokes.clear(), db.performances.clear(), db.sets.clear()])
+  await Promise.all([db.jokes.clear(), db.performances.clear(), db.sets.clear(), db.chunks.clear()])
 })
 
 const wrap = (ui: React.ReactNode) => render(<I18nProvider><MemoryRouter>{ui}</MemoryRouter></I18nProvider>)
@@ -96,5 +96,34 @@ describe('DeleteJokeDialog focus and errors', () => {
     spy.mockRestore()
     await userEvent.click(del)
     await waitFor(() => expect(onDeleted).toHaveBeenCalled())
+  })
+})
+
+describe('DeleteJokeDialog with chunks', () => {
+  it('shows the blocked view with links and no delete button', async () => {
+    const j = await createJoke({ title: 'Bit' })
+    const ch = await createChunk({ title: 'Airport', items: [{ jokeId: j.id }] })
+    wrap(<DeleteJokeDialog jokeId={j.id} title="Bit" onClose={() => {}} onDeleted={() => {}} />)
+    expect(await screen.findByText('Remove it from these chunks first:')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Airport' })).toHaveAttribute('href', `/chunks/${ch.id}`)
+    expect(screen.queryByRole('button', { name: 'Delete joke' })).toBeNull()
+    const close = screen.getByRole('button', { name: 'Close' })
+    await waitFor(() => expect(close).toHaveFocus())
+  })
+
+  it('switches to the blocked view when a chunk appears after opening', async () => {
+    const j = await createJoke({ title: 'Bit' })
+    const onDeleted = vi.fn()
+    wrap(<DeleteJokeDialog jokeId={j.id} title="Bit" onClose={() => {}} onDeleted={onDeleted} />)
+    const del = await screen.findByRole('button', { name: 'Delete joke' })
+    await waitFor(() => expect(del).toBeEnabled())
+    await createChunk({ title: 'Late', items: [{ jokeId: j.id }] })
+    await userEvent.click(del)
+    expect(await screen.findByText('Remove it from these chunks first:')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Late' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Delete joke' })).toBeNull()
+    expect(onDeleted).not.toHaveBeenCalled()
+    expect(await db.jokes.get(j.id)).toBeDefined()
   })
 })
